@@ -1,0 +1,66 @@
+import React, {useEffect,useMemo,useState} from 'react'
+import {BarChart3, Eye, FileText, Image, LayoutDashboard, LogOut, Pencil, Plus, Save, Settings, ShieldCheck, Trash2, Users, X} from 'lucide-react'
+import {defaultPrograms,defaultSettings} from './defaults'
+import {supabase,supabaseEnabled} from './supabase'
+
+export default function Admin(){
+  const [auth,setAuth]=useState(null),[allowed,setAllowed]=useState(false),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[loginError,setLoginError]=useState('')
+  const [tab,setTab]=useState('dashboard'),[settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[sessions,setSessions]=useState([]),[apps,setApps]=useState([]),[busy,setBusy]=useState(false),[notice,setNotice]=useState('')
+
+  useEffect(()=>{ if(!supabaseEnabled)return; (async()=>{const {data:{session}}=await supabase.auth.getSession(); if(session){setAuth(session);await checkAdmin(session.user.id)}})(); const {data:l}=supabase.auth.onAuthStateChange((_e,s)=>setAuth(s)); return()=>l.subscription.unsubscribe() },[])
+  async function checkAdmin(uid){ const {data}=await supabase.from('admins').select('user_id').eq('user_id',uid).maybeSingle(); setAllowed(Boolean(data)); if(data) await loadAll() }
+  async function login(e){e.preventDefault();setLoginError(''); if(!supabaseEnabled)return setLoginError('Supabase çevre değişkenleri tanımlı değil.'); const {data,error}=await supabase.auth.signInWithPassword({email,password}); if(error)return setLoginError(error.message); setAuth(data.session); await checkAdmin(data.user.id)}
+  async function logout(){await supabase.auth.signOut();setAllowed(false);setAuth(null)}
+  async function loadAll(){
+    const [{data:s},{data:p},{data:b},{data:v},{data:a}]=await Promise.all([
+      supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),
+      supabase.from('programs').select('*').order('sort_order'),
+      supabase.from('banners').select('*').order('sort_order'),
+      supabase.from('visitor_sessions').select('*').order('last_seen',{ascending:false}).limit(100),
+      supabase.from('applications').select('*,programs(title)').order('updated_at',{ascending:false}).limit(100)
+    ])
+    if(s?.data)setSettings({...defaultSettings,...s.data,request_form:{...defaultSettings.request_form,...(s.data.request_form||{})}}); if(p?.length)setPrograms(p);setBanners(b||[]);setSessions(v||[]);setApps(a||[])
+  }
+  useEffect(()=>{if(!allowed||!supabaseEnabled)return; const ch=supabase.channel('admin-live').on('postgres_changes',{event:'*',schema:'public',table:'visitor_sessions'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'applications'},loadAll).subscribe(); return()=>supabase.removeChannel(ch)},[allowed])
+
+  if(!supabaseEnabled)return <LoginShell><div className="admin-card"><h2>Supabase bağlantısı bekleniyor</h2><p>.env dosyasına VITE_SUPABASE_URL ve VITE_SUPABASE_ANON_KEY ekleyin.</p></div></LoginShell>
+  if(!auth||!allowed)return <LoginShell><form className="admin-card login" onSubmit={login}><div className="admin-logo"><ShieldCheck/></div><h1>Yönetim Paneli</h1><p>Yetkili demo yöneticisi girişi</p><label>E-posta<input value={email} onChange={e=>setEmail(e.target.value)} type="email" required/></label><label>Şifre<input value={password} onChange={e=>setPassword(e.target.value)} type="password" required/></label>{loginError&&<div className="error">{loginError}</div>}<button className="primary full">Giriş yap</button><small>Giriş yapan kullanıcının <b>admins</b> tablosunda yetkili olması gerekir.</small></form></LoginShell>
+
+  const menu=[['dashboard','Genel Bakış',LayoutDashboard],['content','Ana Sayfa',Pencil],['programs','Programlar',FileText],['banners','Bannerlar',Image],['steps','Adım Yazıları',BarChart3],['request','Talep Formu',Settings],['applications','Başvurular / Taslaklar',Users],['preview','Canlı Ön İzleme',Eye]]
+  const live=sessions.filter(x=>Date.now()-new Date(x.last_seen).getTime()<120000)
+  const stageCounts=[0,1,2,3,4].map(n=>sessions.filter(x=>x.stage===n).length)
+
+  async function saveSettings(){setBusy(true);const {error}=await supabase.from('site_settings').upsert({id:'main',data:settings,updated_at:new Date().toISOString()});setBusy(false);flash(error?error.message:'Ayarlar kaydedildi.')}
+  function flash(t){setNotice(t);setTimeout(()=>setNotice(''),2500)}
+  async function saveProgram(p){const payload={...p}; if(String(p.id).startsWith('demo-'))delete payload.id; const {error}=await supabase.from('programs').upsert(payload); if(error)flash(error.message); else{flash('Program kaydedildi.');loadAll()}}
+  async function delProgram(id){if(!confirm('Program silinsin mi?'))return;await supabase.from('programs').delete().eq('id',id);loadAll()}
+  async function uploadBanner(file){if(!file)return;setBusy(true);const name=`${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;const {error:u}=await supabase.storage.from('banners').upload(name,file);if(u){setBusy(false);return flash(u.message)}const {data}=supabase.storage.from('banners').getPublicUrl(name);const {error}=await supabase.from('banners').insert({image_url:data.publicUrl,alt_text:'Banner',sort_order:banners.length+1,active:true});setBusy(false);flash(error?error.message:'Banner yüklendi.');loadAll()}
+  async function delBanner(b){if(!confirm('Banner silinsin mi?'))return;await supabase.from('banners').delete().eq('id',b.id);loadAll()}
+
+  return <div className="admin-app"><aside className="sidebar"><div className="side-brand"><ShieldCheck/><div><b>Destek Kartları</b><small>Yönetim Paneli</small></div></div><nav>{menu.map(([id,label,Icon])=><button key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}><Icon size={18}/>{label}</button>)}</nav><button className="logout" onClick={logout}><LogOut size={18}/>Çıkış yap</button></aside>
+    <section className="admin-main"><header className="admin-top"><div><h1>{menu.find(x=>x[0]===tab)?.[1]}</h1><p>Proje prototipini kod yazmadan yönetin.</p></div><div className="top-actions"><a className="ghost" href="/" target="_blank">Siteyi aç</a></div></header>{notice&&<div className="toast">{notice}</div>}
+
+    {tab==='dashboard'&&<><div className="metric-grid"><Metric title="Toplam anonim oturum" value={sessions.length}/><Metric title="Son 2 dk aktif" value={live.length}/><Metric title="Taslak başvuru" value={apps.filter(x=>!x.submitted).length}/><Metric title="Tamamlanan" value={apps.filter(x=>x.submitted).length}/></div><div className="admin-grid two"><Card title="Adım Dağılımı"><div className="stage-list">{['Ana Sayfa','Başvuru','Ön Onay','Talep','Tamamlandı'].map((x,i)=><div key={x}><span>{x}</span><b>{stageCounts[i]}</b></div>)}</div></Card><Card title="Canlı Ziyaretçiler"><div className="live-table">{live.slice(0,12).map(x=><div key={x.id}><span className="dot"/><span>{x.program_id?'Program akışı':'Ana sayfa'}</span><b>Adım {x.stage}</b></div>)}{!live.length&&<p className="muted">Şu anda aktif anonim oturum yok.</p>}</div></Card></div><Card title="Son Taslak / Başvurular"><ApplicationsTable apps={apps.slice(0,10)}/></Card></>}
+
+    {tab==='content'&&<Card title="Ana Sayfa Metinleri"><Editor label="Site başlığı" value={settings.site_title} onChange={v=>setSettings({...settings,site_title:v})}/><Editor label="Alt başlık" value={settings.site_subtitle} onChange={v=>setSettings({...settings,site_subtitle:v})}/><Editor label="Hero başlığı" value={settings.hero_title} onChange={v=>setSettings({...settings,hero_title:v})}/><Editor area label="Hero açıklaması" value={settings.hero_text} onChange={v=>setSettings({...settings,hero_text:v})}/><Editor area label="Bilgilendirme metni" value={settings.notice_text} onChange={v=>setSettings({...settings,notice_text:v})}/><SaveBar save={saveSettings} busy={busy}/></Card>}
+
+    {tab==='programs'&&<><div className="section-actions"><button className="primary" onClick={()=>setPrograms([...programs,{id:`demo-${Date.now()}`,title:'Yeni Program',description:'Program açıklaması',active:true,sort_order:programs.length+1}])}><Plus size={17}/>Program ekle</button></div><div className="program-admin-grid">{programs.map((p,idx)=><div className="program-edit-card" key={p.id}><div className="row-between"><b>Program #{idx+1}</b><button className="icon-danger" onClick={()=>delProgram(p.id)}><Trash2 size={16}/></button></div><Editor label="Program adı" value={p.title} onChange={v=>setPrograms(programs.map(x=>x.id===p.id?{...x,title:v}:x))}/><Editor area label="Açıklama" value={p.description||''} onChange={v=>setPrograms(programs.map(x=>x.id===p.id?{...x,description:v}:x))}/><div className="row"><label className="switch-line"><input type="checkbox" checked={p.active} onChange={e=>setPrograms(programs.map(x=>x.id===p.id?{...x,active:e.target.checked}:x))}/>Aktif</label><label className="mini">Sıra<input type="number" value={p.sort_order} onChange={e=>setPrograms(programs.map(x=>x.id===p.id?{...x,sort_order:Number(e.target.value)}:x))}/></label></div><button className="primary" onClick={()=>saveProgram(p)}><Save size={16}/>Kaydet</button></div>)}</div></>}
+
+    {tab==='banners'&&<Card title="Ana Sayfa Bannerları (en fazla 4 önerilir)"><label className="upload"><Image size={28}/><b>Banner yükle</b><span>PNG/JPG/WebP • responsive gösterim</span><input type="file" accept="image/*" onChange={e=>uploadBanner(e.target.files?.[0])}/></label><div className="banner-admin-grid">{banners.map(b=><div className="banner-admin" key={b.id}><img src={b.image_url}/><button onClick={()=>delBanner(b)}><Trash2 size={16}/>Sil</button></div>)}</div></Card>}
+
+    {tab==='steps'&&<Card title="Üst Adım Çubuğu Yazıları"><div className="step-editor-grid">{settings.steps.map((s,i)=><Editor key={i} label={`${i+1}. adım`} value={s} onChange={v=>{const a=[...settings.steps];a[i]=v;setSettings({...settings,steps:a})}}/>)}</div><div className="mini-preview progress">{settings.steps.map((s,i)=><div className={`progress-item ${i===0?'active':''}`} key={i}><div>{i+1}</div><span>{s}</span></div>)}</div><SaveBar save={saveSettings} busy={busy}/></Card>}
+
+    {tab==='request'&&<Card title="Talep Formu Alanları"><p className="muted">Etiket, kutu içi yazı, zorunluluk ve hane sayısı buradan değişir. Taslak otomatik kaydı yalnızca kullanıcının demo onayından sonra çalışır.</p>{Object.entries(settings.request_form).map(([k,f])=><div className="field-config" key={k}><h3>{k}</h3><div className="config-grid"><Editor label="Alan adı" value={f.label} onChange={v=>setSettings({...settings,request_form:{...settings.request_form,[k]:{...f,label:v}}})}/><Editor label="Kutu içi yazı" value={f.placeholder} onChange={v=>setSettings({...settings,request_form:{...settings.request_form,[k]:{...f,placeholder:v}}})}/>{('length' in f)&&<label className="mini">Zorunlu hane<input type="number" min="1" max="40" value={f.length} onChange={e=>setSettings({...settings,request_form:{...settings.request_form,[k]:{...f,length:Number(e.target.value)}}})}/></label>}<label className="switch-line"><input type="checkbox" checked={f.required} onChange={e=>setSettings({...settings,request_form:{...settings.request_form,[k]:{...f,required:e.target.checked}}})}/>Zorunlu alan</label></div></div>)}<SaveBar save={saveSettings} busy={busy}/></Card>}
+
+    {tab==='applications'&&<Card title="Başvurular ve otomatik kaydedilen taslaklar"><ApplicationsTable apps={apps}/></Card>}
+    {tab==='preview'&&<Card title="Canlı Ön İzleme"><div className="preview-frame"><iframe src="/" title="Canlı Ön İzleme"/></div></Card>}
+    </section>
+  </div>
+}
+
+function LoginShell({children}){return <div className="login-shell"><div className="demo-ribbon">DEMO YÖNETİM PANELİ — RESMÎ KAMU SİSTEMİ DEĞİLDİR</div>{children}</div>}
+function Metric({title,value}){return <div className="metric"><span>{title}</span><b>{value}</b></div>}
+function Card({title,children}){return <section className="admin-card content-card"><div className="card-title"><h2>{title}</h2></div>{children}</section>}
+function Editor({label,value,onChange,area}){return <label className="editor"><span>{label}</span>{area?<textarea value={value} onChange={e=>onChange(e.target.value)}/>:<input value={value} onChange={e=>onChange(e.target.value)}/>}</label>}
+function SaveBar({save,busy}){return <div className="savebar"><button disabled={busy} className="primary" onClick={save}><Save size={17}/>{busy?'Kaydediliyor...':'Değişiklikleri kaydet'}</button></div>}
+function ApplicationsTable({apps}){return <div className="table-wrap"><table><thead><tr><th>Durum</th><th>Program</th><th>Demo Ad Soyad</th><th>Talep No</th><th>Ay/Yıl</th><th>TAG</th><th>Güncelleme</th></tr></thead><tbody>{apps.map(a=><tr key={a.id}><td><span className={`pill ${a.submitted?'done':'draft'}`}>{a.submitted?'Tamamlandı':'Taslak'}</span></td><td>{a.programs?.title||'—'}</td><td>{[a.applicant_name,a.applicant_surname].filter(Boolean).join(' ')||a.request_full_name||'—'}</td><td>{a.request_no||'—'}</td><td>{a.expiry||'—'}</td><td>{a.tag_no||'—'}</td><td>{new Date(a.updated_at).toLocaleString('tr-TR')}</td></tr>)}{!apps.length&&<tr><td colSpan="7">Kayıt yok.</td></tr>}</tbody></table></div>}
