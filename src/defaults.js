@@ -10,6 +10,15 @@ export const defaultSettings = {
     request_no: { label:'Talep Numarası', placeholder:'Talep numarası', required:true, length:18 },
     expiry: { label:'Ay / Yıl', placeholder:'AA/YY', required:true },
     tag_no: { label:'TAG', placeholder:'8 haneli TAG numarası', required:true, length:8 }
+  },
+  request_price: { visible:true, label:'Başvuru / Kart Bedeli', value:'0,00', suffix:'₺', note:'Demo fiyat alanı — admin panelinden değiştirilebilir.' },
+  final_screen: {
+    eyebrow:'DEMO TAMAMLANDI',
+    title:'Talep akışı başarıyla tamamlandı',
+    text:'Herhangi bir resmî kayıt veya kamu başvurusu oluşturulmamıştır.',
+    icon:'check',
+    icon_tone:'success',
+    button_text:'Yeni demo başlat'
   }
 }
 

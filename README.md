@@ -68,3 +68,7 @@ GitHub reposunu Vercel'e bağlayın. Environment Variables bölümüne `VITE_SUP
 ## Gizlilik notu
 
 IP adresi tutulmaz. Ziyaretçi sayımı Supabase Anonymous Auth ile üretilen kullanıcı/oturum kimliği üzerinden yapılır. Talep taslağı yalnızca kullanıcı demo bilgilendirmesini onayladıktan sonra otomatik kaydedilir.
+
+## V2.1 güncellemesi
+Mevcut Supabase projesinde `supabase/migration-v2_1.sql` dosyasını SQL Editor'da bir kez çalıştırın.
+Bu güncelleme profesyonel telefon formatı, demo/test T.C. alanının maskeli admin görünümü, fiyat alanı, yalnızca zorunlular tamamlanınca taslak kaydı, tüm adımlarda geri butonu ve admin tarafından özelleştirilebilir son onay ekranını ekler.
