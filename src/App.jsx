@@ -41,9 +41,21 @@ const validTc=v=>{
 }
 
 export default function App(){
- const [settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[step,setStep]=useState(0),[program,setProgram]=useState(null),[form,setForm]=useState(blankForm),[request,setRequest]=useState(blankRequest),[error,setError]=useState(''),[fieldErrors,setFieldErrors]=useState({}),[uid,setUid]=useState(null),[applicationId,setApplicationId]=useState(null)
+ const [appLoading,setAppLoading]=useState(true),[settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[step,setStep]=useState(0),[program,setProgram]=useState(null),[form,setForm]=useState(blankForm),[request,setRequest]=useState(blankRequest),[error,setError]=useState(''),[fieldErrors,setFieldErrors]=useState({}),[uid,setUid]=useState(null),[applicationId,setApplicationId]=useState(null)
  const saveTimer=useRef(null),draftSaving=useRef(false),clientDraftToken=useRef(getClientDraftToken())
- useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=await supabase.auth.getSession();let user=session?.user;if(!user){const {data}=await supabase.auth.signInAnonymously();user=data?.user}setUid(user?.id||null);const [{data:s},{data:p},{data:b}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').eq('active',true).order('sort_order'),supabase.from('banners').select('*').eq('active',true).order('sort_order')]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);if(b?.length)setBanners(b)})()},[])
+ useEffect(()=>{
+  const started=Date.now();
+  const finish=()=>{
+    const remain=Math.max(0,1800-(Date.now()-started));
+    setTimeout(()=>setAppLoading(false),remain);
+  };
+  if(document.readyState==='complete')finish();
+  else window.addEventListener('load',finish,{once:true});
+  const fallback=setTimeout(()=>setAppLoading(false),2600);
+  return()=>{window.removeEventListener('load',finish);clearTimeout(fallback)}
+},[]);
+
+useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=await supabase.auth.getSession();let user=session?.user;if(!user){const {data}=await supabase.auth.signInAnonymously();user=data?.user}setUid(user?.id||null);const [{data:s},{data:p},{data:b}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').eq('active',true).order('sort_order'),supabase.from('banners').select('*').eq('active',true).order('sort_order')]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);if(b?.length)setBanners(b)})()},[])
  useEffect(()=>{if(!uid||!supabaseEnabled)return;const update=()=>supabase.from('visitor_sessions').upsert({user_id:uid,stage:step,program_id:program?.id||null,last_seen:new Date().toISOString()},{onConflict:'user_id'});update();const t=setInterval(update,25000);return()=>clearInterval(t)},[uid,step,program?.id])
  const requestComplete=useMemo(()=>{const c=settings.request_form;if(c.full_name.required&&!request.full_name.trim())return false;if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return false;if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return false;if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return false;return true},[request,settings.request_form])
  const applicationPayload=(submitted=false)=>{const custom={};Object.keys(settings.preform.fields||{}).forEach(k=>{if(!['name','surname','tc_no','birth','city','district','phone','profession','income','household'].includes(k))custom[k]=form[k]??''});return {user_id:uid,program_id:program?.id||null,applicant_name:form.name||'',applicant_surname:form.surname||'',tc_no:form.tc_no||'',birth_date:form.birth||null,city:form.city||'',district:form.district||'',phone:form.phone||'',profession:form.profession||'',income:form.income||'',household:form.household||'',custom_fields:custom,request_full_name:request.full_name,request_no:request.request_no,expiry:request.expiry,tag_no:request.tag_no,status:submitted?'submitted':'draft',submitted,updated_at:new Date().toISOString()}}
@@ -142,6 +154,16 @@ export default function App(){
  }
  const goBack=()=>{setError('');setFieldErrors({});setStep(s=>Math.max(0,s-1));scrollTo(0,0)}
  const pf=settings.preform.fields
+ if(appLoading){
+ return <div className="site-splash" role="status" aria-live="polite">
+   <div className="site-splash-inner">
+     <div className="site-splash-mark"><ShieldCheck size={34}/></div>
+     <div className="site-splash-title">Destek Kartları</div>
+     <div className="site-splash-sub">Başvuru sistemi hazırlanıyor</div>
+     <div className="site-splash-loader"><span/><span/><span/></div>
+   </div>
+ </div>
+}
  return <div className="public-app">
   <div className="demo-ribbon"><strong>DEMO PROTOTİP</strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
   {step>0&&settings.top_bar.enabled&&<div className="top-announcement">{settings.top_bar.text}</div>}

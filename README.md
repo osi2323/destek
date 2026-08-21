@@ -131,3 +131,16 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - `Kartlar` ve `Başvuru Yap` programlar bölümüne gider.
 - `Başvuru Sorgula` program alanına kaydırılır.
 - `İletişim` sayfanın en altına gider.
+
+
+## V10.9 — Açılış yükleme ekranı
+- Site ilk açıldığında ana arayüz hemen gösterilmez.
+- Yaklaşık 1.8 saniyelik profesyonel tam ekran yükleme/splash görünümü vardır.
+- Böylece Supabase ayarları ve yeni arayüz hazırlanırken eski/default ana sayfanın kısa süre görünmesi engellenir.
+- 2.6 saniyelik güvenlik fallback'i sayesinde yükleme ekranı takılı kalmaz.
+
+
+## V10.10 — Mobil hero sırası
+- Mobil ve tablet görünümünde hero ana görseli artık metinlerden önce, hero alanının en üstünde gösterilir.
+- Masaüstü yerleşimi değişmez.
+- Hero kart görseli ana görselle birlikte üst görsel alanında kalır.
