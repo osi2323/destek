@@ -67,3 +67,10 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - T.C. demo/test alanı yazma ve yapıştırma sırasında 11 haneye zorlanır.
 - Hata mesajı alan başlığıyla birlikte `Hatalı girdiniz` şeklinde görünür.
 - Ön onay kartında uygulama artık hiçbir rastgele/demo kart numarası üretmez veya yazmaz. Yüklenen görsel ne içeriyorsa yalnızca o görünür.
+
+
+## V10.1 — Sistem alanları kesin kilit
+- `phone` ve `tc_no` alanlarında artık Supabase'te eski/yanlış `type` kaydı bulunsa bile uygulama alan anahtarına göre kuralları zorunlu uygular.
+- Cep telefonu yazma/yapıştırma/sürükle-bırak sırasında 10 ulusal haneden fazlasını kabul etmez ve `0 (5XX) XXX XX XX` formatlar.
+- T.C. demo/test alanı 11 haneden fazlasını hiçbir giriş yönteminde kabul etmez.
+- Ön onay ekranında uygulama tarafından üretilen kart numarası yoktur.

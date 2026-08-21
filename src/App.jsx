@@ -55,8 +55,8 @@ export default function App(){
    const now=new Date();
    if(Number.isNaN(dt.getTime())||dt>now)return `${cfg.label}: Geçerli bir tarih giriniz.`;
   }
-  if(cfg.type==='number'&&!/^\d+$/.test(raw))return `${cfg.label}: Yalnızca rakam giriniz.`;
-  if(cfg.type==='text'){
+  if(effective==='number'&&!/^\d+$/.test(raw))return `${cfg.label}: Yalnızca rakam giriniz.`;
+  if(effective==='text'){
    const min=Number(cfg.min_length)||0,max=Number(cfg.max_length)||0;
    if(min&&raw.length<min)return `${cfg.label}: En az ${min} karakter giriniz.`;
    if(max&&raw.length>max)return `${cfg.label}: En fazla ${max} karakter giriniz.`;
@@ -95,7 +95,7 @@ export default function App(){
    {step===0&&<>{banners.length>0&&<BannerCarousel banners={banners.slice(0,8)}/>}<section className="hero"><div><span className="eyebrow">{settings.home.eyebrow}</span><h1>{settings.home.hero_title}</h1><p>{settings.home.hero_text}</p><div className="notice">{settings.home.notice_icon_url?<img className="home-notice-icon" src={settings.home.notice_icon_url} alt=""/>:<Info size={20}/>}<span>{settings.home.notice_text}</span></div></div><aside>{settings.home.side_icon_url?<img className="home-side-icon" src={settings.home.side_icon_url} alt=""/>:<ShieldCheck size={38}/>}<b>{settings.home.side_title}</b><p>{settings.home.side_text}</p></aside></section><h2 className="section-title">{settings.home.programs_title}</h2><div className="program-grid">{programs.map(p=>{const Icon=iconMap[p.icon]||Users;return <button key={p.id} className="program-card" onClick={()=>{setProgram(p);setStep(1);scrollTo(0,0)}}><div className="icon-box"><Icon/></div><h3>{p.title}</h3><p>{p.description}</p><span>{settings.home.program_button} <ArrowRight size={16}/></span></button>})}</div></>}
    {step>0&&<Progress steps={settings.steps} current={step}/>} 
    {step===1&&<section className="panel"><div className="panel-head"><div><span className="eyebrow">{settings.preform.eyebrow}</span><h2>{program?.title}</h2></div></div><div className="notice"><Info size={18}/>{settings.preform.notice}</div><div className="form-grid">
-    {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,cfg])=><DynamicField key={k} fieldKey={k} cfg={cfg} value={form[k]||''} error={fieldErrors[k]} onChange={v=>{setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v)}));setFieldErrors(prev=>({...prev,[k]:''}))}}/>)} 
+    {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,cfg])=><DynamicField key={k} fieldKey={k} cfg={cfg} value={form[k]||''} error={fieldErrors[k]} onChange={v=>{setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v,k)}));setFieldErrors(prev=>({...prev,[k]:''}))}}/>)} 
    </div><div data-field="consent"><label className={`consent ${fieldErrors.consent?'has-error':''}`}><input type="checkbox" checked={form.consent} onChange={e=>{setForm({...form,consent:e.target.checked});setFieldErrors(prev=>({...prev,consent:''}))}}/><span>{settings.preform.consent}</span></label>{fieldErrors.consent&&<div className="field-error">{fieldErrors.consent}</div>}</div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={()=>{setStep(0);scrollTo(0,0)}}><ArrowLeft size={18}/>{settings.preform.back_button}</button><button className="primary" onClick={goPre}>{settings.preform.next_button}<ArrowRight size={18}/></button></div></section>}
    {step===2&&<section className="panel centered"><div className="ok"><CheckCircle2 size={42}/></div><span className="eyebrow">{settings.preapproval.eyebrow}</span><h2>{settings.preapproval.title}</h2><p className="muted">{settings.preapproval.text}</p><CardPreview cfg={settings.preapproval} programCfg={program} name={`${form.name} ${form.surname}`} program={program?.title}/><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.preapproval_back}</button><button className="primary" onClick={()=>{setRequest(r=>({...r,full_name:`${form.name} ${form.surname}`}));setStep(3);scrollTo(0,0)}}>{settings.buttons.preapproval_next}<ArrowRight size={18}/></button></div></section>}
    {step===3&&<section className="panel"><span className="eyebrow">{settings.request_page.eyebrow}</span><h2>{settings.request_page.title}</h2><div className="logo-slots">{settings.request_page.logo_urls.map((u,i)=><div key={i}>{u?<img src={u} alt={`Görsel ${i+1}`}/>:<span>Logo / Görsel {i+1}</span>}</div>)}</div>{settings.request_page.price_enabled&&<div className="price-box"><div><span>{settings.request_page.price_title}</span><b>{settings.request_page.price_value} {settings.request_page.price_currency}</b></div>{settings.request_page.price_subtitle&&<small>{settings.request_page.price_subtitle}</small>}</div>}<div className="form-grid one"><RequestField cfg={settings.request_form.full_name} value={request.full_name} onChange={v=>setRequest({...request,full_name:v})}/><RequestField cfg={settings.request_form.request_no} inputMode="numeric" value={request.request_no} onChange={v=>setRequest({...request,request_no:onlyDigits(v,Number(settings.request_form.request_no.length)||18)})}/><RequestField cfg={settings.request_form.expiry} inputMode="numeric" value={request.expiry} onChange={v=>setRequest({...request,expiry:expiryMask(v)})}/><RequestField cfg={settings.request_form.tag_no} inputMode="numeric" value={request.tag_no} onChange={v=>setRequest({...request,tag_no:onlyDigits(v,Number(settings.request_form.tag_no.length)||8)})}/></div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.request_back}</button><button className="primary" onClick={finish}>{settings.buttons.request_submit}<CheckCircle2 size={18}/></button></div></section>}
@@ -127,59 +127,78 @@ function BannerCarousel({banners}){
    {banners.length>1&&<><button className="banner-nav prev" type="button" onClick={()=>go(-1)} aria-label="Önceki banner">‹</button><button className="banner-nav next" type="button" onClick={()=>go(1)} aria-label="Sonraki banner">›</button><div className="banner-dots">{banners.map((b,i)=><button key={b.id} className={i===index?'active':''} onClick={()=>setIndex(i)} aria-label={`Banner ${i+1}`}/>)}</div></>}
  </section>
 }
-function normalizePreformValue(cfg,v){
- if(cfg.type==='tc')return onlyDigits(v,11);
- if(cfg.type==='phone')return phoneMask(v);
- if(cfg.type==='number')return onlyDigits(v,Number(cfg.max_length)||12);
- if(cfg.type==='text'){
-  const max=Number(cfg.max_length)||120;
-  return String(v||'').slice(0,max);
+function getEffectiveFieldType(fieldKey,cfg){
+ if(fieldKey==='tc_no')return 'tc';
+ if(fieldKey==='phone')return 'phone';
+ if(fieldKey==='birth')return 'date';
+ if(['income','household'].includes(fieldKey))return 'number';
+ return cfg?.type||'text';
+}
+function normalizePreformValue(cfg,v,fieldKey=''){
+ const effective=getEffectiveFieldType(fieldKey,cfg);
+ const raw=String(v??'');
+ if(effective==='tc')return raw.replace(/\D/g,'').slice(0,11);
+ if(effective==='phone'){
+  let d=raw.replace(/\D/g,'');
+  if(d.startsWith('90'))d=d.slice(2);
+  if(d.startsWith('0'))d=d.slice(1);
+  d=d.slice(0,10);
+  return phoneMask(d);
  }
- return v
+ if(effective==='number')return raw.replace(/\D/g,'').slice(0,Number(cfg?.max_length)||12);
+ if(effective==='text')return raw.slice(0,Number(cfg?.max_length)||120);
+ return raw;
 }
 function DynamicField({fieldKey,cfg,value,onChange,error}){
- const type=cfg.type==='date'?'date':'text';
- const inputMode=['phone','tc','number'].includes(cfg.type)?'numeric':undefined;
- const maxLength=cfg.type==='tc'?11:(cfg.type==='phone'?17:(Number(cfg.max_length)||undefined));
- const autoComplete=cfg.type==='phone'?'tel':'off';
- return <Field fieldKey={fieldKey} cfg={cfg} value={value} error={error} onChange={onChange} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete}/>
+ const effective=getEffectiveFieldType(fieldKey,cfg);
+ const type=effective==='date'?'date':'text';
+ const inputMode=['phone','tc','number'].includes(effective)?'numeric':undefined;
+ const maxLength=effective==='tc'?11:(effective==='phone'?17:(Number(cfg?.max_length)||undefined));
+ const autoComplete=effective==='phone'?'tel':'off';
+ return <Field fieldKey={fieldKey} effectiveType={effective} cfg={cfg} value={value} error={error} onChange={onChange} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete}/>
 }
-function Field({fieldKey,cfg,value,onChange,error,type='text',inputMode,maxLength,autoComplete='off'}){
+function Field({fieldKey,effectiveType,cfg,value,onChange,error,type='text',inputMode,maxLength,autoComplete='off'}){
  const sanitize=(raw)=>{
   raw=String(raw??'');
-  if(cfg.type==='tc') return raw.replace(/\D/g,'').slice(0,11);
-  if(cfg.type==='phone'){
+  if(effectiveType==='tc')return raw.replace(/\D/g,'').slice(0,11);
+  if(effectiveType==='phone'){
    let d=raw.replace(/\D/g,'');
    if(d.startsWith('90'))d=d.slice(2);
    if(d.startsWith('0'))d=d.slice(1);
    d=d.slice(0,10);
    return phoneMask(d);
   }
-  if(cfg.type==='number') return raw.replace(/\D/g,'').slice(0,Number(cfg.max_length)||12);
-  if(cfg.type==='text') return raw.slice(0,Number(cfg.max_length)||120);
+  if(effectiveType==='number')return raw.replace(/\D/g,'').slice(0,Number(cfg?.max_length)||12);
+  if(effectiveType==='text')return raw.slice(0,Number(cfg?.max_length)||120);
   return raw;
  };
+ const hardLimit=effectiveType==='tc'?11:(effectiveType==='phone'?17:maxLength);
  return <label data-field={fieldKey} className={`field ${error?'has-error':''}`}>
   <span>{cfg.label}{cfg.required?' *':''}</span>
   <input
    aria-invalid={!!error}
    type={type}
    inputMode={inputMode}
-   maxLength={maxLength}
+   maxLength={hardLimit}
    autoComplete={autoComplete}
    value={value}
-   onChange={e=>onChange(sanitize(e.target.value))}
+   onChange={e=>onChange(sanitize(e.currentTarget.value))}
    onPaste={e=>{
-    if(['phone','tc','number'].includes(cfg.type)){
-      e.preventDefault();
-      const pasted=e.clipboardData.getData('text');
-      onChange(sanitize(pasted));
+    if(['phone','tc','number'].includes(effectiveType)){
+     e.preventDefault();
+     onChange(sanitize(e.clipboardData.getData('text')));
+    }
+   }}
+   onDrop={e=>{
+    if(['phone','tc','number'].includes(effectiveType)){
+     e.preventDefault();
+     onChange(sanitize(e.dataTransfer.getData('text')));
     }
    }}
    placeholder={cfg.placeholder}
   />
-  {cfg.type==='phone'&&<small className="field-help">0 (5XX) XXX XX XX — yalnızca 10 haneli cep telefonu</small>}
-  {cfg.type==='tc'&&<small className="field-help">Tam 11 hane</small>}
+  {effectiveType==='phone'&&<small className="field-help">0 (5XX) XXX XX XX — 10 hane</small>}
+  {effectiveType==='tc'&&<small className="field-help">11 hane</small>}
   {error&&<small className="field-error">{error}</small>}
  </label>
 }
