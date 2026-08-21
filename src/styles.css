@@ -44,3 +44,41 @@
 @media(max-width:520px){
  .footer-builder{grid-template-columns:1fr}
 }
+/* ÖN ONAY KARTI - PC + MOBİL TAM GÖRSEL */
+.support-card {
+  width: min(520px, 100%);
+  height: auto;
+  aspect-ratio: 8 / 5;
+
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+
+  border-radius: 16px;
+  padding: 26px;
+}
+
+/* ADMIN CANLI ÖNİZLEME */
+.mini-support-card {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 5;
+
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+@media (max-width: 620px) {
+  .support-card {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 8 / 5;
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .card-no {
+    font-size: clamp(14px, 4.5vw, 18px);
+  }
+}
