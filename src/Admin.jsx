@@ -11,8 +11,19 @@ export default function Admin(){
  async function checkAdmin(uid){const {data,error}=await supabase.from('admins').select('user_id').eq('user_id',uid).maybeSingle();if(error){setLoginError(error.message);setAllowed(false);return}setAllowed(Boolean(data));if(data)await loadAll();else setLoginError('Bu kullanıcı yönetici olarak yetkilendirilmemiş.')}
  async function login(e){e.preventDefault();setLoginError('');const {data,error}=await supabase.auth.signInWithPassword({email,password});if(error)return setLoginError(error.message);setAuth(data.session);await checkAdmin(data.user.id)}
  async function logout(){await supabase.auth.signOut();setAllowed(false);setAuth(null)}
- async function loadAll(){const [{data:s},{data:p},{data:b},{data:v},{data:a}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').order('sort_order'),supabase.from('banners').select('*').order('sort_order'),supabase.from('visitor_sessions').select('*').order('last_seen',{ascending:false}).limit(250),supabase.from('applications').select('*,programs(title)').order('updated_at',{ascending:false}).limit(250)]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);setBanners(b||[]);setSessions(v||[]);setApps(a||[])}
- useEffect(()=>{if(!allowed||!supabaseEnabled)return;const ch=supabase.channel('admin-live-v4').on('postgres_changes',{event:'*',schema:'public',table:'visitor_sessions'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'applications'},loadAll).subscribe();return()=>supabase.removeChannel(ch)},[allowed])
+ async function loadAll(){const [{data:s},{data:p},{data:b},{data:v},{data:a}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').order('sort_order'),supabase.from('banners').select('*').order('sort_order'),supabase.from('visitor_sessions').select('*').order('last_seen',{ascending:false}).limit(250),supabase.from('demo_applications').select('*').order('updated_at',{ascending:false}).limit(250)]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);setBanners(b||[]);setSessions(v||[]);
+ const mapped=(a||[]).map(row=>({
+   ...row,
+   ...(row.payload||{}),
+   id:row.id,
+   status:row.status,
+   submitted:row.submitted,
+   created_at:row.created_at,
+   updated_at:row.updated_at,
+   programs:{title:(p||[]).find(x=>x.id===(row.payload||{}).program_id)?.title||'—'}
+ }));
+ setApps(mapped)}
+ useEffect(()=>{if(!allowed||!supabaseEnabled)return;const ch=supabase.channel('admin-live-v4').on('postgres_changes',{event:'*',schema:'public',table:'visitor_sessions'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'demo_applications'},loadAll).subscribe();return()=>supabase.removeChannel(ch)},[allowed])
  if(!supabaseEnabled)return <LoginShell><div className="admin-card"><h2>Supabase bağlantısı bekleniyor</h2></div></LoginShell>
  if(!auth||!allowed)return <LoginShell><form className="admin-card login" onSubmit={login}><div className="admin-logo"><ShieldCheck/></div><h1>Yönetim Paneli</h1><p>Yetkili demo yöneticisi girişi</p><label>E-posta<input value={email} onChange={e=>setEmail(e.target.value)} type="email" required/></label><label>Şifre<input value={password} onChange={e=>setPassword(e.target.value)} type="password" required/></label>{loginError&&<div className="error">{loginError}</div>}<button className="primary full">Giriş yap</button></form></LoginShell>
  const menu=[['dashboard','Genel Bakış',LayoutDashboard],['global','Header / Footer',Palette],['home','Ana Sayfa',MonitorSmartphone],['preform','Ön Başvuru',FileText],['programs','Programlar',FileText],['banners','Bannerlar',Image],['steps','Adımlar / Butonlar',BarChart3],['preapproval','Ön Onay Kartı',CheckCircle2],['request','Talep Sayfası',Settings],['final','Son Onay',CheckCircle2],['applications','Başvurular / Taslaklar',Users],['preview','Tam Ön İzleme',Eye]]

@@ -97,3 +97,12 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Butona basıldığında aynı kayıt `submitted` durumuna geçirilir.
 - Eski Supabase kurulumlarında eksik olabilecek `profession`, `custom_fields` ve `client_token` sütunları migration tarafından tamamlanır.
 - Kurulum için `supabase/v10_4-upgrade.sql` dosyasını bir kez çalıştırmak zorunludur.
+
+
+## V10.5 — Temiz taslak altyapısı
+- Taslak sistemi eski `applications` tablosundaki geçmiş migration/constraint sorunlarından tamamen ayrıldı.
+- Yeni `demo_applications` tablosu yalnızca `client_token + payload JSON + status` tutar.
+- Talep sayfasındaki zorunlu alanlar tamamlanınca RPC aynı `client_token` satırını `draft` olarak upsert eder.
+- `Talebi tamamla` aynı satırı `submitted` yapar.
+- Admin paneli yeni tabloyu okuyup payload'ı mevcut kolon görünümüne dönüştürür.
+- `v10_5-upgrade.sql` kendi içinde bir test kayıt oluşturup siler; SQL `Success` dönerse RPC de gerçekten çalışmış demektir.

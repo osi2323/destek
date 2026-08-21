@@ -53,7 +53,7 @@ export default function App(){
   try{
     const payload=applicationPayload(false);
     delete payload.user_id;
-    const {data,error}=await supabase.rpc('save_demo_application',{
+    const {data,error}=await supabase.rpc('save_demo_application_v2',{
       p_client_token:clientDraftToken.current,
       p_payload:payload,
       p_submitted:false
@@ -125,7 +125,7 @@ export default function App(){
     try{
       const payload=applicationPayload(true);
       delete payload.user_id;
-      const {data,error}=await supabase.rpc('save_demo_application',{
+      const {data,error}=await supabase.rpc('save_demo_application_v2',{
         p_client_token:clientDraftToken.current,
         p_payload:payload,
         p_submitted:true
@@ -135,7 +135,7 @@ export default function App(){
       if(savedId)setApplicationId(savedId);
     }catch(err){
       console.error('Talep gönderilemedi:',err);
-      return setError('Talep kaydedilemedi. Supabase v10_4-upgrade.sql güncellemesini çalıştırıp tekrar deneyin.');
+      return setError(`Talep kaydedilemedi: ${err?.message||'Bilinmeyen veritabanı hatası'}`);
     }
   }
   setStep(4);scrollTo(0,0)
