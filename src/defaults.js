@@ -20,16 +20,16 @@ export const defaultSettings = {
     consent:'Bu prototipin demo olduğunu ve form bilgilerinin yalnızca proje akışını göstermek için kullanılacağını biliyorum.',
     back_button:'Geri', next_button:'Ön değerlendirmeyi tamamla',
     fields:{
-      name:{label:'Ad',placeholder:'Adınızı girin',required:true,visible:true,type:'text'},
-      surname:{label:'Soyad',placeholder:'Soyadınızı girin',required:true,visible:true,type:'text'},
-      tc_no:{label:'T.C. Kimlik Numarası',placeholder:'11 haneli demo/test numarası',required:true,visible:true,type:'tc'},
-      birth:{label:'Doğum Tarihi',placeholder:'',required:true,visible:true,type:'date'},
-      city:{label:'İl',placeholder:'İl',required:true,visible:true,type:'text'},
-      district:{label:'İlçe',placeholder:'İlçe',required:true,visible:true,type:'text'},
-      phone:{label:'Cep Telefonu',placeholder:'+90 (5XX) XXX XX XX',required:true,visible:true,type:'phone'},
-      profession:{label:'Meslek',placeholder:'Mesleğinizi yazın',required:false,visible:true,type:'text'},
-      income:{label:'Aylık Hane Geliri',placeholder:'Örn. 25000',required:false,visible:true,type:'number'},
-      household:{label:'Hane Kişi Sayısı',placeholder:'Örn. 4',required:false,visible:true,type:'number'}
+      name:{label:'Ad',placeholder:'Adınızı girin',required:true,visible:true,type:'text',order:1},
+      surname:{label:'Soyad',placeholder:'Soyadınızı girin',required:true,visible:true,type:'text',order:2},
+      tc_no:{label:'T.C. Kimlik Numarası',placeholder:'11 haneli demo/test numarası',required:true,visible:true,type:'tc',order:3},
+      birth:{label:'Doğum Tarihi',placeholder:'',required:true,visible:true,type:'date',order:4},
+      phone:{label:'Cep Telefonu',placeholder:'0 (5XX) XXX XX XX',required:true,visible:true,type:'phone',order:5},
+      profession:{label:'Meslek',placeholder:'Mesleğinizi yazın',required:false,visible:true,type:'text',order:6},
+      city:{label:'İl',placeholder:'İl seçiniz / yazınız',required:true,visible:true,type:'text',order:7},
+      district:{label:'İlçe',placeholder:'İlçe seçiniz / yazınız',required:true,visible:true,type:'text',order:8},
+      income:{label:'Aylık Hane Geliri',placeholder:'Örn. 25.000',required:false,visible:true,type:'number',max_length:9,order:9},
+      household:{label:'Hane Kişi Sayısı',placeholder:'Örn. 4',required:false,visible:true,type:'number',max_length:2,order:10}
     }
   },
   steps: ['Başvuru','Ön Onay','Talep','Tamamlandı'],

