@@ -127,3 +127,6 @@
 /* V9.1 - Karttaki yapay chip/kare kaldırıldı */
 .support-top{justify-content:flex-end}
 .support-top span{margin-left:auto}
+
+/* V10 */
+.card-no{display:none!important}

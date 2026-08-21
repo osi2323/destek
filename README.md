@@ -60,3 +60,10 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Ön başvuru formuna İlçe'nin hemen altına zorunlu `Açık Adres` alanı eklendi.
 - Adres alanı: mahalle/köy, cadde, sokak, bina ve daire bilgisi için 10–180 karakter.
 - Eski Supabase site ayarlarında adres alanı yoksa uygulama otomatik olarak varsayılan adres alanını ekler; yeni SQL gerekmez.
+
+
+## V10 — Kritik form düzeltmeleri
+- Cep telefonu inputu yazma ve yapıştırma sırasında 10 ulusal haneye zorlanır; fazladan rakam state'e alınmaz.
+- T.C. demo/test alanı yazma ve yapıştırma sırasında 11 haneye zorlanır.
+- Hata mesajı alan başlığıyla birlikte `Hatalı girdiniz` şeklinde görünür.
+- Ön onay kartında uygulama artık hiçbir rastgele/demo kart numarası üretmez veya yazmaz. Yüklenen görsel ne içeriyorsa yalnızca o görünür.

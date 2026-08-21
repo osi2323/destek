@@ -38,7 +38,7 @@ const validTc=v=>{
 
 export default function App(){
  const [settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[step,setStep]=useState(0),[program,setProgram]=useState(null),[form,setForm]=useState(blankForm),[request,setRequest]=useState(blankRequest),[error,setError]=useState(''),[fieldErrors,setFieldErrors]=useState({}),[uid,setUid]=useState(null),[applicationId,setApplicationId]=useState(null)
- const saveTimer=useRef(null),cardNo=useMemo(randomCard,[step===2])
+ const saveTimer=useRef(null)
  useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=await supabase.auth.getSession();let user=session?.user;if(!user){const {data}=await supabase.auth.signInAnonymously();user=data?.user}setUid(user?.id||null);const [{data:s},{data:p},{data:b}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').eq('active',true).order('sort_order'),supabase.from('banners').select('*').eq('active',true).order('sort_order')]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);if(b?.length)setBanners(b)})()},[])
  useEffect(()=>{if(!uid||!supabaseEnabled)return;const update=()=>supabase.from('visitor_sessions').upsert({user_id:uid,stage:step,program_id:program?.id||null,last_seen:new Date().toISOString()},{onConflict:'user_id'});update();const t=setInterval(update,25000);return()=>clearInterval(t)},[uid,step,program?.id])
  const requestComplete=useMemo(()=>{const c=settings.request_form;if(c.full_name.required&&!request.full_name.trim())return false;if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return false;if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return false;if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return false;return true},[request,settings.request_form])
@@ -48,8 +48,8 @@ export default function App(){
   const raw=String(value??'').trim();
   if(cfg?.visible&&cfg.required&&!raw)return `${cfg.label}: Bu alan zorunludur.`;
   if(!raw)return '';
-  if(cfg.type==='tc'&&!validTc(raw))return `${cfg.label}: 11 haneli geçerli demo/test formatı giriniz.`;
-  if(cfg.type==='phone'&&!validPhone(raw))return `${cfg.label}: 0 (5XX) XXX XX XX biçiminde geçerli cep telefonu giriniz.`;
+  if(cfg.type==='tc'&&!validTc(raw))return `${cfg.label}: Hatalı girdiniz. Tam 11 haneli geçerli demo/test numarası giriniz.`;
+  if(cfg.type==='phone'&&!validPhone(raw))return `${cfg.label}: Hatalı girdiniz. 0 (5XX) XXX XX XX biçiminde 10 haneli cep telefonu giriniz.`;
   if(cfg.type==='date'){
    const dt=new Date(raw+'T00:00:00');
    const now=new Date();
@@ -88,7 +88,7 @@ export default function App(){
  const goBack=()=>{setError('');setFieldErrors({});setStep(s=>Math.max(0,s-1));scrollTo(0,0)}
  const pf=settings.preform.fields
  return <div className="public-app">
-  <div className="demo-ribbon"><strong></strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
+  <div className="demo-ribbon"><strong>DEMO PROTOTİP</strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
   {settings.top_bar.enabled&&<div className="top-announcement">{settings.top_bar.text}</div>}
   <header className="site-header"><div className="brand">{settings.header.logo_url?<img className="header-logo" src={settings.header.logo_url}/>:<div className="brand-mark"><ShieldCheck size={28}/></div>}<div><b>{settings.site_title}</b><small>{settings.site_subtitle}</small></div></div><div className="safe"><BadgeCheck size={18}/>{settings.header.safe_text}</div></header>
   <main className="shell">
@@ -97,7 +97,7 @@ export default function App(){
    {step===1&&<section className="panel"><div className="panel-head"><div><span className="eyebrow">{settings.preform.eyebrow}</span><h2>{program?.title}</h2></div></div><div className="notice"><Info size={18}/>{settings.preform.notice}</div><div className="form-grid">
     {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,cfg])=><DynamicField key={k} fieldKey={k} cfg={cfg} value={form[k]||''} error={fieldErrors[k]} onChange={v=>{setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v)}));setFieldErrors(prev=>({...prev,[k]:''}))}}/>)} 
    </div><div data-field="consent"><label className={`consent ${fieldErrors.consent?'has-error':''}`}><input type="checkbox" checked={form.consent} onChange={e=>{setForm({...form,consent:e.target.checked});setFieldErrors(prev=>({...prev,consent:''}))}}/><span>{settings.preform.consent}</span></label>{fieldErrors.consent&&<div className="field-error">{fieldErrors.consent}</div>}</div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={()=>{setStep(0);scrollTo(0,0)}}><ArrowLeft size={18}/>{settings.preform.back_button}</button><button className="primary" onClick={goPre}>{settings.preform.next_button}<ArrowRight size={18}/></button></div></section>}
-   {step===2&&<section className="panel centered"><div className="ok"><CheckCircle2 size={42}/></div><span className="eyebrow">{settings.preapproval.eyebrow}</span><h2>{settings.preapproval.title}</h2><p className="muted">{settings.preapproval.text}</p><CardPreview cfg={settings.preapproval} programCfg={program} cardNo={cardNo} name={`${form.name} ${form.surname}`} program={program?.title}/><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.preapproval_back}</button><button className="primary" onClick={()=>{setRequest(r=>({...r,full_name:`${form.name} ${form.surname}`}));setStep(3);scrollTo(0,0)}}>{settings.buttons.preapproval_next}<ArrowRight size={18}/></button></div></section>}
+   {step===2&&<section className="panel centered"><div className="ok"><CheckCircle2 size={42}/></div><span className="eyebrow">{settings.preapproval.eyebrow}</span><h2>{settings.preapproval.title}</h2><p className="muted">{settings.preapproval.text}</p><CardPreview cfg={settings.preapproval} programCfg={program} name={`${form.name} ${form.surname}`} program={program?.title}/><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.preapproval_back}</button><button className="primary" onClick={()=>{setRequest(r=>({...r,full_name:`${form.name} ${form.surname}`}));setStep(3);scrollTo(0,0)}}>{settings.buttons.preapproval_next}<ArrowRight size={18}/></button></div></section>}
    {step===3&&<section className="panel"><span className="eyebrow">{settings.request_page.eyebrow}</span><h2>{settings.request_page.title}</h2><div className="logo-slots">{settings.request_page.logo_urls.map((u,i)=><div key={i}>{u?<img src={u} alt={`Görsel ${i+1}`}/>:<span>Logo / Görsel {i+1}</span>}</div>)}</div>{settings.request_page.price_enabled&&<div className="price-box"><div><span>{settings.request_page.price_title}</span><b>{settings.request_page.price_value} {settings.request_page.price_currency}</b></div>{settings.request_page.price_subtitle&&<small>{settings.request_page.price_subtitle}</small>}</div>}<div className="form-grid one"><RequestField cfg={settings.request_form.full_name} value={request.full_name} onChange={v=>setRequest({...request,full_name:v})}/><RequestField cfg={settings.request_form.request_no} inputMode="numeric" value={request.request_no} onChange={v=>setRequest({...request,request_no:onlyDigits(v,Number(settings.request_form.request_no.length)||18)})}/><RequestField cfg={settings.request_form.expiry} inputMode="numeric" value={request.expiry} onChange={v=>setRequest({...request,expiry:expiryMask(v)})}/><RequestField cfg={settings.request_form.tag_no} inputMode="numeric" value={request.tag_no} onChange={v=>setRequest({...request,tag_no:onlyDigits(v,Number(settings.request_form.tag_no.length)||8)})}/></div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.request_back}</button><button className="primary" onClick={finish}>{settings.buttons.request_submit}<CheckCircle2 size={18}/></button></div></section>}
    {step===4&&<section className="panel centered final-panel">{settings.final_page.icon_url?<img className="final-icon-img" style={{width:+settings.final_page.icon_size||72,height:+settings.final_page.icon_size||72}} src={settings.final_page.icon_url}/>:<div className="ok"><CheckCircle2 size={42}/></div>}<span className="eyebrow">{settings.final_page.eyebrow}</span><h2>{settings.final_page.title}</h2><p className="muted final-text">{settings.final_page.text}</p><div className="final-summary"><h3>{settings.final_page.summary_title}</h3><div><span>{settings.final_page.program_label}</span><b>{program?.title||'—'}</b></div><div><span>{settings.final_page.applicant_label}</span><b>{form.name} {form.surname}</b></div><div><span>{settings.final_page.request_label}</span><b>{request.request_no||'—'}</b></div></div><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.final_page.back_button}</button><button className="primary" onClick={()=>{setStep(0);setProgram(null);setFieldErrors({});setForm(blankForm);setRequest(blankRequest);setApplicationId(null);scrollTo(0,0)}}>{settings.final_page.home_button}<Home size={18}/></button></div></section>}
   </main><footer className="site-footer">
@@ -139,14 +139,50 @@ function normalizePreformValue(cfg,v){
 }
 function DynamicField({fieldKey,cfg,value,onChange,error}){
  const type=cfg.type==='date'?'date':'text';
- const inputMode=cfg.type==='phone'?'tel':(['tc','number'].includes(cfg.type)?'numeric':undefined);
+ const inputMode=['phone','tc','number'].includes(cfg.type)?'numeric':undefined;
  const maxLength=cfg.type==='tc'?11:(cfg.type==='phone'?17:(Number(cfg.max_length)||undefined));
  const autoComplete=cfg.type==='phone'?'tel':'off';
  return <Field fieldKey={fieldKey} cfg={cfg} value={value} error={error} onChange={onChange} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete}/>
 }
 function Field({fieldKey,cfg,value,onChange,error,type='text',inputMode,maxLength,autoComplete='off'}){
- return <label data-field={fieldKey} className={`field ${error?'has-error':''}`}><span>{cfg.label}{cfg.required?' *':''}</span><input aria-invalid={!!error} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete} value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/>{cfg.type==='phone'&&<small className="field-help">0 (5XX) XXX XX XX — 10 haneli mobil numara</small>}{cfg.type==='tc'&&<small className="field-help">11 haneli demo/test numarası</small>}{error&&<small className="field-error">{error}</small>}</label>
+ const sanitize=(raw)=>{
+  raw=String(raw??'');
+  if(cfg.type==='tc') return raw.replace(/\D/g,'').slice(0,11);
+  if(cfg.type==='phone'){
+   let d=raw.replace(/\D/g,'');
+   if(d.startsWith('90'))d=d.slice(2);
+   if(d.startsWith('0'))d=d.slice(1);
+   d=d.slice(0,10);
+   return phoneMask(d);
+  }
+  if(cfg.type==='number') return raw.replace(/\D/g,'').slice(0,Number(cfg.max_length)||12);
+  if(cfg.type==='text') return raw.slice(0,Number(cfg.max_length)||120);
+  return raw;
+ };
+ return <label data-field={fieldKey} className={`field ${error?'has-error':''}`}>
+  <span>{cfg.label}{cfg.required?' *':''}</span>
+  <input
+   aria-invalid={!!error}
+   type={type}
+   inputMode={inputMode}
+   maxLength={maxLength}
+   autoComplete={autoComplete}
+   value={value}
+   onChange={e=>onChange(sanitize(e.target.value))}
+   onPaste={e=>{
+    if(['phone','tc','number'].includes(cfg.type)){
+      e.preventDefault();
+      const pasted=e.clipboardData.getData('text');
+      onChange(sanitize(pasted));
+    }
+   }}
+   placeholder={cfg.placeholder}
+  />
+  {cfg.type==='phone'&&<small className="field-help">0 (5XX) XXX XX XX — yalnızca 10 haneli cep telefonu</small>}
+  {cfg.type==='tc'&&<small className="field-help">Tam 11 hane</small>}
+  {error&&<small className="field-error">{error}</small>}
+ </label>
 }
 function RequestField({cfg,value,onChange,inputMode}){return <label className="field"><span>{cfg.label}{cfg.required?' *':''}</span><input inputMode={inputMode} autoComplete="off" value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/></label>}
 function Progress({steps,current}){return <div className="progress">{steps.map((s,i)=><div className={`progress-item ${i+1<=current?'active':''}`} key={i}><div>{i+1}</div><span>{s}</span></div>)}</div>}
-function CardPreview({cfg,programCfg,cardNo,name,program}){const bg=programCfg?.card_image_url||cfg.card_image_url;const color=programCfg?.card_text_color||cfg.card_text_color||'#fff';const style=bg?{backgroundImage:`linear-gradient(rgba(8,28,48,.18),rgba(8,28,48,.18)),url(${bg})`,color}:{color};return <div className="support-card" style={style}><div className="support-top"><span>{cfg.card_title}</span></div><div className="card-no">{cardNo}</div><div className="support-bottom"><div><small>{cfg.holder_label}</small><b>{(name||'ÖRNEK KULLANICI').toUpperCase()}</b></div><div><small>{cfg.program_label}</small><b>{(program||'Örnek Program').replace(' Destek Kartı','')}</b></div></div></div>}
+function CardPreview({cfg,programCfg,name,program}){const bg=programCfg?.card_image_url||cfg.card_image_url;const color=programCfg?.card_text_color||cfg.card_text_color||'#fff';const style=bg?{backgroundImage:`linear-gradient(rgba(8,28,48,.18),rgba(8,28,48,.18)),url(${bg})`,color}:{color};return <div className="support-card" style={style}><div className="support-top"><span>{cfg.card_title}</span></div><div className="support-bottom"><div><small>{cfg.holder_label}</small><b>{(name||'ÖRNEK KULLANICI').toUpperCase()}</b></div><div><small>{cfg.program_label}</small><b>{(program||'Örnek Program').replace(' Destek Kartı','')}</b></div></div></div>}
