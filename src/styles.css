@@ -220,3 +220,127 @@
  .showcase-promo{grid-template-columns:86px 1fr;padding:18px 14px;gap:12px}.showcase-promo-image img{max-width:80px}.showcase-promo h2{font-size:19px}.showcase-promo p{font-size:12px}
  .showcase-bottom-nav{bottom:5px;border-radius:14px}.showcase-bottom-nav button{font-size:9px;padding:11px 3px}.showcase-bottom-nav svg{width:18px}
 }
+
+
+/* ===== V10.7 PROGRAM KARTLARI - REFERANS FORMAT ===== */
+.programs-top-visual{
+  width:100%;
+  margin:0 0 24px;
+  border-radius:20px;
+  overflow:hidden;
+  border:1px solid #e7ebef;
+  background:#fff;
+  box-shadow:0 12px 30px rgba(25,42,59,.06);
+}
+.programs-top-visual img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:520px;
+  object-fit:cover;
+}
+.showcase-program-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:16px;
+}
+.showcase-program-card{
+  min-height:0;
+  padding:0;
+  border-radius:18px;
+  overflow:hidden;
+  background:#fff!important;
+  display:flex;
+  flex-direction:column;
+  text-align:center;
+}
+.program-card-poster{
+  position:relative;
+  height:150px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  padding:8px 10px 0;
+}
+.card-tone-0 .program-card-poster{background:linear-gradient(180deg,#fff1f1,#fff7f7)}
+.card-tone-1 .program-card-poster{background:linear-gradient(180deg,#eef9f5,#f7fcfa)}
+.card-tone-2 .program-card-poster{background:linear-gradient(180deg,#fff4e7,#fffaf4)}
+.card-tone-3 .program-card-poster{background:linear-gradient(180deg,#f5efff,#fbf9ff)}
+.program-card-poster img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center bottom;
+}
+.program-poster-placeholder{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+}
+.program-poster-placeholder svg{
+  width:78px;
+  height:78px;
+  color:#d61a22;
+}
+.program-card-body{
+  position:relative;
+  z-index:2;
+  min-height:145px;
+  margin-top:-12px;
+  padding:20px 14px 16px;
+  background:#fff;
+  border-radius:22px 22px 0 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.program-card-body h3{
+  margin:0 0 8px;
+  font-size:15px;
+  line-height:1.25;
+  color:#182538;
+}
+.program-card-body p{
+  margin:0 0 14px;
+  font-size:11px;
+  line-height:1.5;
+  color:#667685;
+  min-height:34px;
+}
+.program-go{
+  margin-top:auto;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  color:#fff;
+}
+.card-tone-0 .program-go{background:#ef4a4f}
+.card-tone-1 .program-go{background:#18a96f}
+.card-tone-2 .program-go{background:#ff9718}
+.card-tone-3 .program-go{background:#954bd1}
+.program-go svg{width:17px;height:17px}
+.admin-wide-thumb{
+  width:100%;
+  max-height:220px;
+  object-fit:cover;
+  border:1px solid #e1e7ed;
+  border-radius:12px;
+  margin:10px 0 16px;
+  background:#fff;
+}
+@media(max-width:900px){
+  .showcase-program-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .programs-top-visual{border-radius:14px;margin-bottom:18px}
+  .programs-top-visual img{max-height:310px}
+  .showcase-program-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .program-card-poster{height:112px;padding:6px 6px 0}
+  .program-card-body{min-height:132px;margin-top:-9px;padding:16px 9px 12px;border-radius:18px 18px 0 0}
+  .program-card-body h3{font-size:12px}
+  .program-card-body p{font-size:9px;line-height:1.45;margin-bottom:10px}
+  .program-go{width:30px;height:30px}
+}

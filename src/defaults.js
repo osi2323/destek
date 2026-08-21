@@ -30,6 +30,7 @@ export const defaultSettings = {
       {title:'Başvuruyu Tamamlayın',text:'Talep adımını tamamlayın.'}
     ],
     program_images:{},
+    programs_top_image_url:'',
     stats:[
       {value:'6+',label:'Destek Programı'},
       {value:'Hızlı',label:'Başvuru Akışı'},

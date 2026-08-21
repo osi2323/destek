@@ -216,10 +216,11 @@ function ShowcaseHome({settings,programs,onProgram,onStart}){
   </section>
 
   <section className="showcase-programs" id="home-programs">
+   {h.programs_top_image_url&&<div className="programs-top-visual"><img src={h.programs_top_image_url} alt="Destek programları ana görseli"/></div>}
    <div className="showcase-section-heading"><span>{h.eyebrow}</span><h2>{h.programs_title}</h2><p>{h.programs_subtitle}</p></div>
    <div className="showcase-program-grid">{programs.map((p,i)=>{const Icon=iconMap[p.icon]||Users;const img=h.program_images?.[p.id];return <button className={`showcase-program-card card-tone-${i%4}`} key={p.id} onClick={()=>onProgram(p)}>
-     <div className="program-visual">{img?<img src={img} alt=""/>:<Icon/>}</div>
-     <h3>{p.title}</h3><p>{p.description}</p><span><ArrowRight/></span>
+     <div className="program-card-poster">{img?<img src={img} alt={`${p.title} görseli`}/>:<div className="program-poster-placeholder"><Icon/></div>}</div>
+     <div className="program-card-body"><h3>{p.title}</h3><p>{p.description}</p><span className="program-go"><ArrowRight/></span></div>
     </button>})}</div>
   </section>
 
@@ -234,7 +235,27 @@ function ShowcaseHome({settings,programs,onProgram,onStart}){
   </section>
 
   <nav className="showcase-bottom-nav">
-   {(h.bottom_nav||[]).slice(0,5).map((label,i)=>{const Icon=navIcons[i]||Home;return <button key={i} onClick={i===1||i===2?onStart:undefined}><Icon/><span>{label}</span></button>})}
+   {(h.bottom_nav||[]).slice(0,5).map((label,i)=>{
+    const Icon=navIcons[i]||Home;
+    const handleNav=()=>{
+      if(i===0){
+        window.scrollTo({top:0,behavior:'smooth'});
+        return;
+      }
+      if(i===1||i===2){
+        onStart();
+        return;
+      }
+      if(i===3){
+        document.getElementById('home-programs')?.scrollIntoView({behavior:'smooth',block:'start'});
+        return;
+      }
+      if(i===4){
+        window.scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'});
+      }
+    };
+    return <button key={i} type="button" onClick={handleNav}><Icon/><span>{label}</span></button>
+   })}
   </nav>
  </div>
 }

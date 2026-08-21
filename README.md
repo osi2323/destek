@@ -115,3 +115,19 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Hero ana görseli, hero kart görseli, her program için ayrı ana sayfa görseli ve alt promosyon görseli admin panelinden yüklenebilir.
 - Ana başlıklar, CTA butonları, süreç adımları, istatistikler ve mobil alt menü yazıları admin panelinden düzenlenebilir.
 - Yeni SQL migration gerekmez; tüm yeni ana sayfa alanları `site_settings.data` JSON içinde saklanır.
+
+
+## V10.7 — Program kartları referans düzeni
+- Program bölümü referans görseldeki kart yapısına yaklaştırıldı: üstte büyük afiş/görsel, altta beyaz yuvarlak içerik alanı, başlık, açıklama ve renkli yuvarlak ok.
+- Her programın afişi Admin > Ana Sayfa bölümünden ayrı yüklenebilir.
+- Program afişleri için önerilen ölçü 700×520 px veya 800×600 px.
+- Programlar bölüm başlığının hemen üstüne ayrı `Programlar ana görseli` yükleme alanı eklendi.
+- Bu ana görsel için önerilen ölçü 1600×700 veya 1600×800 px.
+- Mobilde program kartları iki sütun olarak referanstaki düzene yakın görünür.
+
+
+## V10.8 — Alt menü butonları
+- `Ana Sayfa` butonu artık sayfanın en üstüne yumuşak şekilde döner.
+- `Kartlar` ve `Başvuru Yap` programlar bölümüne gider.
+- `Başvuru Sorgula` program alanına kaydırılır.
+- `İletişim` sayfanın en altına gider.

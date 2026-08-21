@@ -91,10 +91,12 @@ export default function Admin(){
       {(settings.home.process_items||[]).map((x,i)=><div className="field-config" key={i}><b>{i+1}. Adım</b><Editor label="Başlık" value={x.title} onChange={v=>set(['home','process_items',i,'title'],v)}/><Editor label="Açıklama" value={x.text} onChange={v=>set(['home','process_items',i,'text'],v)}/></div>)}
 
       <h3 className="subhead">Program Alanı</h3>
+      <UploadBox title="Programlar ana görseli" hint="Bu görsel 'DESTEK PROGRAMLARIMIZ / Size Uygun Kartı Seçin' başlığının hemen üstünde görünür. Önerilen: 1600×700 px veya 1600×800 px, PNG/JPG/WebP." onFile={f=>uploadSetting(f,['home','programs_top_image_url'],'home-programs-top')}/>
+      {settings.home.programs_top_image_url&&<img className="admin-wide-thumb" src={settings.home.programs_top_image_url}/>}
       <Editor label="Programlar başlığı" value={settings.home.programs_title} onChange={v=>set(['home','programs_title'],v)}/>
       <Editor label="Programlar alt açıklaması" value={settings.home.programs_subtitle} onChange={v=>set(['home','programs_subtitle'],v)}/>
-      <div className="admin-hint">Her program kartına ana sayfada ayrı görsel yükleyebilirsiniz. Görsel yüklemezsen mevcut ikon kullanılır.</div>
-      {programs.map(p=><div className="inline-upload" key={p.id}><UploadBox title={`${p.title} ana sayfa görseli`} hint="Önerilen: 600×420 px PNG/WebP" onFile={f=>uploadSetting(f,['home','program_images',p.id],`home-program-${p.id}`)}/>{settings.home.program_images?.[p.id]&&<img src={settings.home.program_images[p.id]}/>}</div>)}
+      <div className="admin-hint">Her program kartının üst afiş/görsel alanına ayrı görsel yükleyebilirsiniz. Görsel, referanstaki gibi kartın üst bölümünde büyük gösterilir. Önerilen görsel: 700×520 px veya 800×600 px, PNG/WebP. Görsel yüklemezsen mevcut ikon kullanılır.</div>
+      {programs.map(p=><div className="inline-upload" key={p.id}><UploadBox title={`${p.title} ana sayfa görseli`} hint="Önerilen: 700×520 px veya 800×600 px PNG/WebP. Kartın üst afiş alanını doldurur." onFile={f=>uploadSetting(f,['home','program_images',p.id],`home-program-${p.id}`)}/>{settings.home.program_images?.[p.id]&&<img src={settings.home.program_images[p.id]}/>}</div>)}
 
       <h3 className="subhead">İstatistik Bandı</h3>
       {(settings.home.stats||[]).map((x,i)=><div className="field-config" key={i}><b>#{i+1}</b><Editor label="Değer" value={x.value} onChange={v=>set(['home','stats',i,'value'],v)}/><Editor label="Etiket" value={x.label} onChange={v=>set(['home','stats',i,'label'],v)}/></div>)}
