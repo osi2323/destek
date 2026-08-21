@@ -89,3 +89,11 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - İlk taslak insert'inden sonra aynı kayıt güncellenir; her tuşta yeni satır oluşturulmaz.
 - Admin Realtime aboneliği nedeniyle taslak kayıt `Başvurular / Taslaklar` ekranına otomatik düşer.
 - Talep sayfasında yüklenmemiş logo/görsel alanları artık hiç render edilmez; boş kesik çizgili çerçeveler görünmez.
+
+
+## V10.4 — Taslak kayıt sistemi kalıcı düzeltme
+- Taslak ve `Talebi tamamla` artık anonim Supabase kullanıcı oturumuna bağımlı değildir.
+- Tarayıcı başına üretilen rastgele `client_token` ile tek taslak satırı oluşturulur ve zorunlu talep alanları tamamlandıkça aynı satır güncellenir.
+- Butona basıldığında aynı kayıt `submitted` durumuna geçirilir.
+- Eski Supabase kurulumlarında eksik olabilecek `profession`, `custom_fields` ve `client_token` sütunları migration tarafından tamamlanır.
+- Kurulum için `supabase/v10_4-upgrade.sql` dosyasını bir kez çalıştırmak zorunludur.
