@@ -17,3 +17,7 @@ Yeni yönetim alanları: Header/Footer/üst afiş, ana sayfa, ön başvuru alanl
 
 ### Güvenlik / sunum notu
 Bu paket resmî kamu hizmeti değildir. Üstteki DEMO/RESMÎ DEĞİLDİR şeridi bilerek yönetim panelinden kaldırılamaz. Gerçek kişisel veri kullanmayın.
+
+
+## V5 yükseltmesi
+Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içinde bir kez çalıştırın. Program bazlı kart görselleri için önerilen ölçü 1600×1000 px (8:5). Banner ölçüleri: masaüstü 1600×500 px, mobil 1080×600 px.

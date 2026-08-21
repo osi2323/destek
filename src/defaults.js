@@ -1,6 +1,7 @@
 export const defaultSettings = {
   site_title: 'Sosyal Destek Kartları',
   site_subtitle: 'Kurumsal Başvuru Prototipi',
+  demo_ribbon: { text:'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN' },
   top_bar: { enabled:true, text:'Destek programlarını inceleyin ve uygun başvuru türünü seçin.' },
   header: { safe_text:'Güvenli demo akışı', logo_url:'', home_aria:'Ana sayfa' },
   home: {
@@ -64,4 +65,4 @@ export const defaultPrograms = [
   ['Esnaf Destek Kartı','Faaliyette bulunan küçük işletmeler ve esnaf için.','store'],
   ['Ev Hanımları Destek Kartı','Ev içi emeğe yönelik örnek sosyal destek başvurusu.','home'],
   ['Emekli Destek Kartı','Emekliler için örnek destek başvuru programı.','landmark']
-].map((x,i)=>({id:`demo-${i+1}`,title:x[0],description:x[1],icon:x[2],active:true,sort_order:i+1}))
+].map((x,i)=>({id:`demo-${i+1}`,title:x[0],description:x[1],icon:x[2],card_image_url:'',card_text_color:'#ffffff',active:true,sort_order:i+1}))

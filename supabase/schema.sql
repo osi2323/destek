@@ -13,6 +13,9 @@ create table if not exists public.programs (
   id uuid primary key default gen_random_uuid(),
   title text not null,
   description text,
+  icon text not null default 'users',
+  card_image_url text default '',
+  card_text_color text not null default '#ffffff',
   active boolean not null default true,
   sort_order integer not null default 0,
   created_at timestamptz not null default now()
@@ -21,6 +24,7 @@ create table if not exists public.programs (
 create table if not exists public.banners (
   id uuid primary key default gen_random_uuid(),
   image_url text not null,
+  mobile_image_url text default '',
   alt_text text,
   active boolean not null default true,
   sort_order integer not null default 0,
