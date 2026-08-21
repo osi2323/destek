@@ -130,3 +130,20 @@
 
 /* V10 */
 .card-no{display:none!important}
+
+/* V10.3 - Talep sayfası görselleri yalnızca yüklenmişse görünür */
+.logo-slots .logo-slot-image{
+  height:auto;
+  min-height:0;
+  border:0;
+  background:transparent;
+  padding:0;
+  overflow:hidden;
+}
+.logo-slots .logo-slot-image img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:none;
+  object-fit:contain;
+}

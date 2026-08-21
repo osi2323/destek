@@ -33,12 +33,48 @@ const validTc=v=>{
 
 export default function App(){
  const [settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[step,setStep]=useState(0),[program,setProgram]=useState(null),[form,setForm]=useState(blankForm),[request,setRequest]=useState(blankRequest),[error,setError]=useState(''),[fieldErrors,setFieldErrors]=useState({}),[uid,setUid]=useState(null),[applicationId,setApplicationId]=useState(null)
- const saveTimer=useRef(null)
+ const saveTimer=useRef(null),draftSaving=useRef(false)
  useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=await supabase.auth.getSession();let user=session?.user;if(!user){const {data}=await supabase.auth.signInAnonymously();user=data?.user}setUid(user?.id||null);const [{data:s},{data:p},{data:b}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').eq('active',true).order('sort_order'),supabase.from('banners').select('*').eq('active',true).order('sort_order')]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);if(b?.length)setBanners(b)})()},[])
  useEffect(()=>{if(!uid||!supabaseEnabled)return;const update=()=>supabase.from('visitor_sessions').upsert({user_id:uid,stage:step,program_id:program?.id||null,last_seen:new Date().toISOString()},{onConflict:'user_id'});update();const t=setInterval(update,25000);return()=>clearInterval(t)},[uid,step,program?.id])
  const requestComplete=useMemo(()=>{const c=settings.request_form;if(c.full_name.required&&!request.full_name.trim())return false;if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return false;if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return false;if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return false;return true},[request,settings.request_form])
  const applicationPayload=(submitted=false)=>{const custom={};Object.keys(settings.preform.fields||{}).forEach(k=>{if(!['name','surname','tc_no','birth','city','district','phone','profession','income','household'].includes(k))custom[k]=form[k]??''});return {user_id:uid,program_id:program?.id||null,applicant_name:form.name||'',applicant_surname:form.surname||'',tc_no:form.tc_no||'',birth_date:form.birth||null,city:form.city||'',district:form.district||'',phone:form.phone||'',profession:form.profession||'',income:form.income||'',household:form.household||'',custom_fields:custom,request_full_name:request.full_name,request_no:request.request_no,expiry:request.expiry,tag_no:request.tag_no,status:submitted?'submitted':'draft',submitted,updated_at:new Date().toISOString()}}
- useEffect(()=>{if(step!==3||!form.consent||!uid||!supabaseEnabled||!requestComplete)return;clearTimeout(saveTimer.current);saveTimer.current=setTimeout(async()=>{const payload=applicationPayload(false);if(applicationId)await supabase.from('applications').update(payload).eq('id',applicationId);else{const {data}=await supabase.from('applications').insert(payload).select('id').single();if(data?.id)setApplicationId(data.id)}},450);return()=>clearTimeout(saveTimer.current)},[request,requestComplete,step,uid,form,program?.id,applicationId,settings.preform.fields])
+ const saveDraft=async()=>{
+  if(!supabaseEnabled||step!==3||!form.consent||!requestComplete||draftSaving.current)return;
+  draftSaving.current=true;
+  try{
+   let currentUid=uid;
+   if(!currentUid){
+    const {data:{session}}=await supabase.auth.getSession();
+    currentUid=session?.user?.id||null;
+    if(!currentUid){
+     const {data,error}=await supabase.auth.signInAnonymously();
+     if(error)throw error;
+     currentUid=data?.user?.id||null;
+     if(currentUid)setUid(currentUid);
+    }
+   }
+   if(!currentUid)throw new Error('Anonim oturum oluşturulamadı.');
+   const payload={...applicationPayload(false),user_id:currentUid,status:'draft',submitted:false,updated_at:new Date().toISOString()};
+   if(applicationId){
+    const {error}=await supabase.from('applications').update(payload).eq('id',applicationId);
+    if(error)throw error;
+   }else{
+    const {data,error}=await supabase.from('applications').insert(payload).select('id').single();
+    if(error)throw error;
+    if(data?.id)setApplicationId(data.id);
+   }
+  }catch(err){
+   console.error('Otomatik taslak kaydı başarısız:',err);
+  }finally{
+   draftSaving.current=false;
+  }
+ }
+ useEffect(()=>{
+  if(step!==3||!form.consent||!supabaseEnabled||!requestComplete)return;
+  clearTimeout(saveTimer.current);
+  saveTimer.current=setTimeout(()=>{saveDraft()},300);
+  return()=>clearTimeout(saveTimer.current)
+ },[request,requestComplete,step,uid,form,program?.id,applicationId,settings.preform.fields])
  const validatePreField=(k,cfg,value)=>{
   const raw=String(value??'').trim();
   const effective=getEffectiveFieldType(k,cfg);
@@ -80,7 +116,36 @@ export default function App(){
   }
   setError('');setFieldErrors({});setStep(2);scrollTo(0,0)
  }
- const finish=async()=>{const c=settings.request_form;if(c.full_name.required&&!request.full_name.trim())return setError(`${c.full_name.label} zorunludur.`);if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return setError(`${c.request_no.label} ${c.request_no.length} haneli olmalıdır.`);if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return setError(`${c.expiry.label} AA/YY biçiminde olmalıdır.`);if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return setError(`${c.tag_no.label} ${c.tag_no.length} haneli olmalıdır.`);setError('');if(supabaseEnabled){const payload=applicationPayload(true);if(applicationId)await supabase.from('applications').update(payload).eq('id',applicationId);else await supabase.from('applications').insert(payload)}setStep(4);scrollTo(0,0)}
+ const finish=async()=>{
+  const c=settings.request_form;
+  if(c.full_name.required&&!request.full_name.trim())return setError(`${c.full_name.label} zorunludur.`);
+  if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return setError(`${c.request_no.label} ${c.request_no.length} haneli olmalıdır.`);
+  if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return setError(`${c.expiry.label} AA/YY biçiminde olmalıdır.`);
+  if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return setError(`${c.tag_no.label} ${c.tag_no.length} haneli olmalıdır.`);
+  setError('');
+  if(supabaseEnabled){
+   try{
+    let currentUid=uid;
+    if(!currentUid){
+     const {data:{session}}=await supabase.auth.getSession();
+     currentUid=session?.user?.id||null;
+    }
+    const payload={...applicationPayload(true),user_id:currentUid,status:'submitted',submitted:true,updated_at:new Date().toISOString()};
+    if(applicationId){
+     const {error}=await supabase.from('applications').update(payload).eq('id',applicationId);
+     if(error)throw error;
+    }else{
+     const {data,error}=await supabase.from('applications').insert(payload).select('id').single();
+     if(error)throw error;
+     if(data?.id)setApplicationId(data.id);
+    }
+   }catch(err){
+    console.error('Talep gönderilemedi:',err);
+    return setError('Talep kaydedilirken bir bağlantı hatası oluştu. Lütfen tekrar deneyin.');
+   }
+  }
+  setStep(4);scrollTo(0,0)
+ }
  const goBack=()=>{setError('');setFieldErrors({});setStep(s=>Math.max(0,s-1));scrollTo(0,0)}
  const pf=settings.preform.fields
  return <div className="public-app">
@@ -94,7 +159,7 @@ export default function App(){
     {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,cfg])=><DynamicField key={k} fieldKey={k} cfg={cfg} value={form[k]||''} error={fieldErrors[k]} onChange={v=>{setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v,k)}));setFieldErrors(prev=>({...prev,[k]:''}))}}/>)} 
    </div><div data-field="consent"><label className={`consent ${fieldErrors.consent?'has-error':''}`}><input type="checkbox" checked={form.consent} onChange={e=>{setForm({...form,consent:e.target.checked});setFieldErrors(prev=>({...prev,consent:''}))}}/><span>{settings.preform.consent}</span></label>{fieldErrors.consent&&<div className="field-error">{fieldErrors.consent}</div>}</div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={()=>{setStep(0);scrollTo(0,0)}}><ArrowLeft size={18}/>{settings.preform.back_button}</button><button className="primary" onClick={goPre}>{settings.preform.next_button}<ArrowRight size={18}/></button></div></section>}
    {step===2&&<section className="panel centered"><div className="ok"><CheckCircle2 size={42}/></div><span className="eyebrow">{settings.preapproval.eyebrow}</span><h2>{settings.preapproval.title}</h2><p className="muted">{settings.preapproval.text}</p><CardPreview cfg={settings.preapproval} programCfg={program} name={`${form.name} ${form.surname}`} program={program?.title}/><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.preapproval_back}</button><button className="primary" onClick={()=>{setRequest(r=>({...r,full_name:`${form.name} ${form.surname}`}));setStep(3);scrollTo(0,0)}}>{settings.buttons.preapproval_next}<ArrowRight size={18}/></button></div></section>}
-   {step===3&&<section className="panel"><span className="eyebrow">{settings.request_page.eyebrow}</span><h2>{settings.request_page.title}</h2><div className="logo-slots">{settings.request_page.logo_urls.map((u,i)=><div key={i}>{u?<img src={u} alt={`Görsel ${i+1}`}/>:<span>Logo / Görsel {i+1}</span>}</div>)}</div>{settings.request_page.price_enabled&&<div className="price-box"><div><span>{settings.request_page.price_title}</span><b>{settings.request_page.price_value} {settings.request_page.price_currency}</b></div>{settings.request_page.price_subtitle&&<small>{settings.request_page.price_subtitle}</small>}</div>}<div className="form-grid one"><RequestField cfg={settings.request_form.full_name} value={request.full_name} onChange={v=>setRequest({...request,full_name:v})}/><RequestField cfg={settings.request_form.request_no} inputMode="numeric" value={request.request_no} onChange={v=>setRequest({...request,request_no:onlyDigits(v,Number(settings.request_form.request_no.length)||18)})}/><RequestField cfg={settings.request_form.expiry} inputMode="numeric" value={request.expiry} onChange={v=>setRequest({...request,expiry:expiryMask(v)})}/><RequestField cfg={settings.request_form.tag_no} inputMode="numeric" value={request.tag_no} onChange={v=>setRequest({...request,tag_no:onlyDigits(v,Number(settings.request_form.tag_no.length)||8)})}/></div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.request_back}</button><button className="primary" onClick={finish}>{settings.buttons.request_submit}<CheckCircle2 size={18}/></button></div></section>}
+   {step===3&&<section className="panel"><span className="eyebrow">{settings.request_page.eyebrow}</span><h2>{settings.request_page.title}</h2>{(settings.request_page.logo_urls||[]).filter(Boolean).length>0&&<div className="logo-slots">{(settings.request_page.logo_urls||[]).filter(Boolean).map((u,i)=><div className="logo-slot-image" key={`${u}-${i}`}><img src={u} alt={`Görsel ${i+1}`}/></div>)}</div>}{settings.request_page.price_enabled&&<div className="price-box"><div><span>{settings.request_page.price_title}</span><b>{settings.request_page.price_value} {settings.request_page.price_currency}</b></div>{settings.request_page.price_subtitle&&<small>{settings.request_page.price_subtitle}</small>}</div>}<div className="form-grid one"><RequestField cfg={settings.request_form.full_name} value={request.full_name} onChange={v=>setRequest({...request,full_name:v})}/><RequestField cfg={settings.request_form.request_no} inputMode="numeric" value={request.request_no} onChange={v=>setRequest({...request,request_no:onlyDigits(v,Number(settings.request_form.request_no.length)||18)})}/><RequestField cfg={settings.request_form.expiry} inputMode="numeric" value={request.expiry} onChange={v=>setRequest({...request,expiry:expiryMask(v)})}/><RequestField cfg={settings.request_form.tag_no} inputMode="numeric" value={request.tag_no} onChange={v=>setRequest({...request,tag_no:onlyDigits(v,Number(settings.request_form.tag_no.length)||8)})}/></div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.request_back}</button><button className="primary" onClick={finish}>{settings.buttons.request_submit}<CheckCircle2 size={18}/></button></div></section>}
    {step===4&&<section className="panel centered final-panel">{settings.final_page.icon_url?<img className="final-icon-img" style={{width:+settings.final_page.icon_size||72,height:+settings.final_page.icon_size||72}} src={settings.final_page.icon_url}/>:<div className="ok"><CheckCircle2 size={42}/></div>}<span className="eyebrow">{settings.final_page.eyebrow}</span><h2>{settings.final_page.title}</h2><p className="muted final-text">{settings.final_page.text}</p><div className="final-summary"><h3>{settings.final_page.summary_title}</h3><div><span>{settings.final_page.program_label}</span><b>{program?.title||'—'}</b></div><div><span>{settings.final_page.applicant_label}</span><b>{form.name} {form.surname}</b></div><div><span>{settings.final_page.request_label}</span><b>{request.request_no||'—'}</b></div></div><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.final_page.back_button}</button><button className="primary" onClick={()=>{setStep(0);setProgram(null);setFieldErrors({});setForm(blankForm);setRequest(blankRequest);setApplicationId(null);scrollTo(0,0)}}>{settings.final_page.home_button}<Home size={18}/></button></div></section>}
   </main><footer className="site-footer">
   <div className="footer-builder">

@@ -81,3 +81,11 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Doğrulama artık sistem alanlarının gerçek tipini (`tc_no`, `phone`, `birth` vb.) kullanır.
 - Demo T.C. alanında gerçek bir kişiye ait geçerli kimlik numarası gerektirilmez; yalnızca 11 hane ve ilk hanenin 0 olmaması kontrol edilir.
 - Telefon 5 ile başlayan 10 haneli mobil numara formatında doğrulanır.
+
+
+## V10.3 — Taslak ve talep görselleri
+- Talep sayfasındaki admin tarafından zorunlu yapılan alanların tamamı geçerli hale gelir gelmez yaklaşık 300 ms içinde Supabase `applications` tablosuna `draft` olarak kaydedilir.
+- Taslak için anonim oturum eksikse uygulama yeniden anonim oturum açmayı dener.
+- İlk taslak insert'inden sonra aynı kayıt güncellenir; her tuşta yeni satır oluşturulmaz.
+- Admin Realtime aboneliği nedeniyle taslak kayıt `Başvurular / Taslaklar` ekranına otomatik düşer.
+- Talep sayfasında yüklenmemiş logo/görsel alanları artık hiç render edilmez; boş kesik çizgili çerçeveler görünmez.
