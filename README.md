@@ -21,3 +21,10 @@ Bu paket resmî kamu hizmeti değildir. Üstteki DEMO/RESMÎ DEĞİLDİR şeridi
 
 ## V5 yükseltmesi
 Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içinde bir kez çalıştırın. Program bazlı kart görselleri için önerilen ölçü 1600×1000 px (8:5). Banner ölçüleri: masaüstü 1600×500 px, mobil 1080×600 px.
+
+
+## V6 güncellemesi
+- Ön başvurudaki E-posta alanı kaldırıldı, varsayılan olarak Meslek alanı eklendi.
+- Admin > Ön Başvuru bölümünden form alanı ekleme/silme, tür, zorunluluk ve görünürlük ayarı yapılabilir.
+- Dinamik ek alanlar `applications.custom_fields` JSONB alanında saklanır.
+- Önce Supabase SQL Editor'da `supabase/v6-upgrade.sql` dosyasını bir kez çalıştırın.

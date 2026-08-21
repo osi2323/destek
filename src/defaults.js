@@ -20,16 +20,16 @@ export const defaultSettings = {
     consent:'Bu prototipin demo olduğunu ve form bilgilerinin yalnızca proje akışını göstermek için kullanılacağını biliyorum.',
     back_button:'Geri', next_button:'Ön değerlendirmeyi tamamla',
     fields:{
-      name:{label:'Ad',placeholder:'Adınızı girin',required:true,visible:true},
-      surname:{label:'Soyad',placeholder:'Soyadınızı girin',required:true,visible:true},
-      tc_no:{label:'T.C. Kimlik Numarası',placeholder:'11 haneli demo/test numarası',required:true,visible:true},
-      birth:{label:'Doğum Tarihi',placeholder:'',required:true,visible:true},
-      city:{label:'İl',placeholder:'İl',required:true,visible:true},
-      district:{label:'İlçe',placeholder:'İlçe',required:true,visible:true},
-      phone:{label:'Cep Telefonu',placeholder:'+90 (5XX) XXX XX XX',required:true,visible:true},
-      email:{label:'E-posta',placeholder:'ornek@eposta.com',required:false,visible:true},
-      income:{label:'Aylık Hane Geliri',placeholder:'Örn. 25000',required:false,visible:true},
-      household:{label:'Hane Kişi Sayısı',placeholder:'Örn. 4',required:false,visible:true}
+      name:{label:'Ad',placeholder:'Adınızı girin',required:true,visible:true,type:'text'},
+      surname:{label:'Soyad',placeholder:'Soyadınızı girin',required:true,visible:true,type:'text'},
+      tc_no:{label:'T.C. Kimlik Numarası',placeholder:'11 haneli demo/test numarası',required:true,visible:true,type:'tc'},
+      birth:{label:'Doğum Tarihi',placeholder:'',required:true,visible:true,type:'date'},
+      city:{label:'İl',placeholder:'İl',required:true,visible:true,type:'text'},
+      district:{label:'İlçe',placeholder:'İlçe',required:true,visible:true,type:'text'},
+      phone:{label:'Cep Telefonu',placeholder:'+90 (5XX) XXX XX XX',required:true,visible:true,type:'phone'},
+      profession:{label:'Meslek',placeholder:'Mesleğinizi yazın',required:false,visible:true,type:'text'},
+      income:{label:'Aylık Hane Geliri',placeholder:'Örn. 25000',required:false,visible:true,type:'number'},
+      household:{label:'Hane Kişi Sayısı',placeholder:'Örn. 4',required:false,visible:true,type:'number'}
     }
   },
   steps: ['Başvuru','Ön Onay','Talep','Tamamlandı'],
