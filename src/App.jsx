@@ -28,12 +28,7 @@ function phoneMask(v){
 const validPhone=v=>{let d=String(v||'').replace(/\D/g,'');if(d.startsWith('90'))d=d.slice(2);if(d.startsWith('0'))d=d.slice(1);return /^5\d{9}$/.test(d)}
 const validTc=v=>{
  const d=String(v||'').replace(/\D/g,'');
- if(!/^\d{11}$/.test(d)||d[0]==='0')return false;
- const a=d.split('').map(Number);
- const odd=a[0]+a[2]+a[4]+a[6]+a[8];
- const even=a[1]+a[3]+a[5]+a[7];
- if(((odd*7-even)%10+10)%10!==a[9])return false;
- return a.slice(0,10).reduce((x,y)=>x+y,0)%10===a[10];
+ return /^\d{11}$/.test(d) && d[0]!=='0';
 }
 
 export default function App(){
@@ -46,20 +41,21 @@ export default function App(){
  useEffect(()=>{if(step!==3||!form.consent||!uid||!supabaseEnabled||!requestComplete)return;clearTimeout(saveTimer.current);saveTimer.current=setTimeout(async()=>{const payload=applicationPayload(false);if(applicationId)await supabase.from('applications').update(payload).eq('id',applicationId);else{const {data}=await supabase.from('applications').insert(payload).select('id').single();if(data?.id)setApplicationId(data.id)}},450);return()=>clearTimeout(saveTimer.current)},[request,requestComplete,step,uid,form,program?.id,applicationId,settings.preform.fields])
  const validatePreField=(k,cfg,value)=>{
   const raw=String(value??'').trim();
+  const effective=getEffectiveFieldType(k,cfg);
   if(cfg?.visible&&cfg.required&&!raw)return `${cfg.label}: Bu alan zorunludur.`;
   if(!raw)return '';
-  if(cfg.type==='tc'&&!validTc(raw))return `${cfg.label}: Hatalı girdiniz. Tam 11 haneli geçerli demo/test numarası giriniz.`;
-  if(cfg.type==='phone'&&!validPhone(raw))return `${cfg.label}: Hatalı girdiniz. 0 (5XX) XXX XX XX biçiminde 10 haneli cep telefonu giriniz.`;
-  if(cfg.type==='date'){
+  if(effective==='tc'&&!validTc(raw))return `${cfg.label}: Hatalı girdiniz. Tam 11 hane giriniz.`;
+  if(effective==='phone'&&!validPhone(raw))return `${cfg.label}: Hatalı girdiniz. 0 (5XX) XXX XX XX biçiminde, 5 ile başlayan 10 haneli cep telefonu giriniz.`;
+  if(effective==='date'){
    const dt=new Date(raw+'T00:00:00');
    const now=new Date();
-   if(Number.isNaN(dt.getTime())||dt>now)return `${cfg.label}: Geçerli bir tarih giriniz.`;
+   if(Number.isNaN(dt.getTime())||dt>now)return `${cfg.label}: Hatalı girdiniz. Geçerli bir tarih giriniz.`;
   }
-  if(effective==='number'&&!/^\d+$/.test(raw))return `${cfg.label}: Yalnızca rakam giriniz.`;
+  if(effective==='number'&&!/^\d+$/.test(raw))return `${cfg.label}: Hatalı girdiniz. Yalnızca rakam giriniz.`;
   if(effective==='text'){
    const min=Number(cfg.min_length)||0,max=Number(cfg.max_length)||0;
-   if(min&&raw.length<min)return `${cfg.label}: En az ${min} karakter giriniz.`;
-   if(max&&raw.length>max)return `${cfg.label}: En fazla ${max} karakter giriniz.`;
+   if(min&&raw.length<min)return `${cfg.label}: Hatalı girdiniz. En az ${min} karakter giriniz.`;
+   if(max&&raw.length>max)return `${cfg.label}: Hatalı girdiniz. En fazla ${max} karakter giriniz.`;
   }
   return '';
  }

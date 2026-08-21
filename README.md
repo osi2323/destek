@@ -74,3 +74,10 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Cep telefonu yazma/yapıştırma/sürükle-bırak sırasında 10 ulusal haneden fazlasını kabul etmez ve `0 (5XX) XXX XX XX` formatlar.
 - T.C. demo/test alanı 11 haneden fazlasını hiçbir giriş yönteminde kabul etmez.
 - Ön onay ekranında uygulama tarafından üretilen kart numarası yoktur.
+
+
+## V10.2 — Ön değerlendirme butonu düzeltmesi
+- `Ön değerlendirmeyi tamamla` butonunu durduran JavaScript `effective is not defined` hatası giderildi.
+- Doğrulama artık sistem alanlarının gerçek tipini (`tc_no`, `phone`, `birth` vb.) kullanır.
+- Demo T.C. alanında gerçek bir kişiye ait geçerli kimlik numarası gerektirilmez; yalnızca 11 hane ve ilk hanenin 0 olmaması kontrol edilir.
+- Telefon 5 ile başlayan 10 haneli mobil numara formatında doğrulanır.
