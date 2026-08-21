@@ -7,7 +7,7 @@ const iconMap={users:Users,graduation:GraduationCap,heart:HeartHandshake,store:S
 const blankForm={name:'',surname:'',tc_no:'',birth:'',city:'',district:'',phone:'',profession:'',income:'',household:'',consent:false}
 const blankRequest={full_name:'',request_no:'',expiry:'',tag_no:''}
 const deepMerge=(base,extra)=>{if(Array.isArray(base))return Array.isArray(extra)?extra:base;if(base&&typeof base==='object'){const out={...base};Object.keys(extra||{}).forEach(k=>{out[k]=k in base?deepMerge(base[k],extra[k]):extra[k]});return out}return extra??base}
-const hydrateSettings=(data)=>{const n=deepMerge(defaultSettings,data||{});if(data?.preform?.fields){const fields={...data.preform.fields};if(fields.email){if(!fields.profession)fields.profession={...defaultSettings.preform.fields.profession};delete fields.email}Object.keys(fields).forEach(k=>{if(fields[k]?.order==null&&defaultSettings.preform.fields[k]?.order!=null)fields[k]={...fields[k],order:defaultSettings.preform.fields[k].order}});n.preform.fields=fields}return n}
+const hydrateSettings=(data)=>{const n=deepMerge(defaultSettings,data||{});if(data?.preform?.fields){const fields={...data.preform.fields};if(fields.email){if(!fields.profession)fields.profession={...defaultSettings.preform.fields.profession};delete fields.email}if(!fields.address)fields.address={...defaultSettings.preform.fields.address};Object.keys(fields).forEach(k=>{if(fields[k]?.order==null&&defaultSettings.preform.fields[k]?.order!=null)fields[k]={...fields[k],order:defaultSettings.preform.fields[k].order}});n.preform.fields=fields}return n}
 const randomCard=()=>Array.from({length:16},()=>Math.floor(Math.random()*10)).join('').replace(/(\d{4})(?=\d)/g,'$1 ')
 const onlyDigits=(v,n)=>v.replace(/\D/g,'').slice(0,n)
 const expiryMask=v=>{const d=v.replace(/\D/g,'').slice(0,4);return d.length>2?d.slice(0,2)+'/'+d.slice(2):d}
@@ -26,19 +26,66 @@ function phoneMask(v){
  return o
 }
 const validPhone=v=>{let d=String(v||'').replace(/\D/g,'');if(d.startsWith('90'))d=d.slice(2);if(d.startsWith('0'))d=d.slice(1);return /^5\d{9}$/.test(d)}
-const validTc=v=>/^\d{11}$/.test(String(v||''))&&String(v)[0]!=='0'
+const validTc=v=>{
+ const d=String(v||'').replace(/\D/g,'');
+ if(!/^\d{11}$/.test(d)||d[0]==='0')return false;
+ const a=d.split('').map(Number);
+ const odd=a[0]+a[2]+a[4]+a[6]+a[8];
+ const even=a[1]+a[3]+a[5]+a[7];
+ if(((odd*7-even)%10+10)%10!==a[9])return false;
+ return a.slice(0,10).reduce((x,y)=>x+y,0)%10===a[10];
+}
 
 export default function App(){
- const [settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[step,setStep]=useState(0),[program,setProgram]=useState(null),[form,setForm]=useState(blankForm),[request,setRequest]=useState(blankRequest),[error,setError]=useState(''),[uid,setUid]=useState(null),[applicationId,setApplicationId]=useState(null)
+ const [settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[step,setStep]=useState(0),[program,setProgram]=useState(null),[form,setForm]=useState(blankForm),[request,setRequest]=useState(blankRequest),[error,setError]=useState(''),[fieldErrors,setFieldErrors]=useState({}),[uid,setUid]=useState(null),[applicationId,setApplicationId]=useState(null)
  const saveTimer=useRef(null),cardNo=useMemo(randomCard,[step===2])
  useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=await supabase.auth.getSession();let user=session?.user;if(!user){const {data}=await supabase.auth.signInAnonymously();user=data?.user}setUid(user?.id||null);const [{data:s},{data:p},{data:b}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').eq('active',true).order('sort_order'),supabase.from('banners').select('*').eq('active',true).order('sort_order')]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);if(b?.length)setBanners(b)})()},[])
  useEffect(()=>{if(!uid||!supabaseEnabled)return;const update=()=>supabase.from('visitor_sessions').upsert({user_id:uid,stage:step,program_id:program?.id||null,last_seen:new Date().toISOString()},{onConflict:'user_id'});update();const t=setInterval(update,25000);return()=>clearInterval(t)},[uid,step,program?.id])
  const requestComplete=useMemo(()=>{const c=settings.request_form;if(c.full_name.required&&!request.full_name.trim())return false;if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return false;if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return false;if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return false;return true},[request,settings.request_form])
  const applicationPayload=(submitted=false)=>{const custom={};Object.keys(settings.preform.fields||{}).forEach(k=>{if(!['name','surname','tc_no','birth','city','district','phone','profession','income','household'].includes(k))custom[k]=form[k]??''});return {user_id:uid,program_id:program?.id||null,applicant_name:form.name||'',applicant_surname:form.surname||'',tc_no:form.tc_no||'',birth_date:form.birth||null,city:form.city||'',district:form.district||'',phone:form.phone||'',profession:form.profession||'',income:form.income||'',household:form.household||'',custom_fields:custom,request_full_name:request.full_name,request_no:request.request_no,expiry:request.expiry,tag_no:request.tag_no,status:submitted?'submitted':'draft',submitted,updated_at:new Date().toISOString()}}
  useEffect(()=>{if(step!==3||!form.consent||!uid||!supabaseEnabled||!requestComplete)return;clearTimeout(saveTimer.current);saveTimer.current=setTimeout(async()=>{const payload=applicationPayload(false);if(applicationId)await supabase.from('applications').update(payload).eq('id',applicationId);else{const {data}=await supabase.from('applications').insert(payload).select('id').single();if(data?.id)setApplicationId(data.id)}},450);return()=>clearTimeout(saveTimer.current)},[request,requestComplete,step,uid,form,program?.id,applicationId,settings.preform.fields])
- const goPre=()=>{for(const [k,cfg] of Object.entries(settings.preform.fields||{})){if(cfg?.visible&&cfg.required&&!String(form[k]||'').trim()){setError(`${cfg.label} alanını doldurun.`);return}if(cfg?.visible&&cfg.type==='tc'&&String(form[k]||'').trim()&&!validTc(form[k])){setError(`${cfg.label} 11 haneli demo/test formatında olmalıdır.`);return}if(cfg?.visible&&cfg.type==='phone'&&String(form[k]||'').trim()&&!validPhone(form[k])){setError(`${cfg.label} alanını +90 (5XX) XXX XX XX formatında eksiksiz girin.`);return}}if(!form.consent){setError('Bilgilendirme onayı zorunludur.');return}setError('');setStep(2);scrollTo(0,0)}
+ const validatePreField=(k,cfg,value)=>{
+  const raw=String(value??'').trim();
+  if(cfg?.visible&&cfg.required&&!raw)return `${cfg.label}: Bu alan zorunludur.`;
+  if(!raw)return '';
+  if(cfg.type==='tc'&&!validTc(raw))return `${cfg.label}: 11 haneli geçerli demo/test formatı giriniz.`;
+  if(cfg.type==='phone'&&!validPhone(raw))return `${cfg.label}: 0 (5XX) XXX XX XX biçiminde geçerli cep telefonu giriniz.`;
+  if(cfg.type==='date'){
+   const dt=new Date(raw+'T00:00:00');
+   const now=new Date();
+   if(Number.isNaN(dt.getTime())||dt>now)return `${cfg.label}: Geçerli bir tarih giriniz.`;
+  }
+  if(cfg.type==='number'&&!/^\d+$/.test(raw))return `${cfg.label}: Yalnızca rakam giriniz.`;
+  if(cfg.type==='text'){
+   const min=Number(cfg.min_length)||0,max=Number(cfg.max_length)||0;
+   if(min&&raw.length<min)return `${cfg.label}: En az ${min} karakter giriniz.`;
+   if(max&&raw.length>max)return `${cfg.label}: En fazla ${max} karakter giriniz.`;
+  }
+  return '';
+ }
+ const goPre=()=>{
+  const errs={};
+  for(const [k,cfg] of Object.entries(settings.preform.fields||{})){
+   if(!cfg?.visible)continue;
+   const msg=validatePreField(k,cfg,form[k]);
+   if(msg)errs[k]=msg;
+  }
+  if(!form.consent)errs.consent='Bilgilendirme onayı: Devam etmek için onay vermelisiniz.';
+  setFieldErrors(errs);
+  const first=Object.keys(errs)[0];
+  if(first){
+   setError('');
+   requestAnimationFrame(()=>{
+    const el=document.querySelector(`[data-field="${first}"] input, [data-field="${first}"]`);
+    el?.scrollIntoView({behavior:'smooth',block:'center'});
+    el?.focus?.();
+   });
+   return;
+  }
+  setError('');setFieldErrors({});setStep(2);scrollTo(0,0)
+ }
  const finish=async()=>{const c=settings.request_form;if(c.full_name.required&&!request.full_name.trim())return setError(`${c.full_name.label} zorunludur.`);if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return setError(`${c.request_no.label} ${c.request_no.length} haneli olmalıdır.`);if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return setError(`${c.expiry.label} AA/YY biçiminde olmalıdır.`);if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return setError(`${c.tag_no.label} ${c.tag_no.length} haneli olmalıdır.`);setError('');if(supabaseEnabled){const payload=applicationPayload(true);if(applicationId)await supabase.from('applications').update(payload).eq('id',applicationId);else await supabase.from('applications').insert(payload)}setStep(4);scrollTo(0,0)}
- const goBack=()=>{setError('');setStep(s=>Math.max(0,s-1));scrollTo(0,0)}
+ const goBack=()=>{setError('');setFieldErrors({});setStep(s=>Math.max(0,s-1));scrollTo(0,0)}
  const pf=settings.preform.fields
  return <div className="public-app">
   <div className="demo-ribbon"><strong>DEMO PROTOTİP</strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
@@ -48,11 +95,11 @@ export default function App(){
    {step===0&&<>{banners.length>0&&<BannerCarousel banners={banners.slice(0,8)}/>}<section className="hero"><div><span className="eyebrow">{settings.home.eyebrow}</span><h1>{settings.home.hero_title}</h1><p>{settings.home.hero_text}</p><div className="notice">{settings.home.notice_icon_url?<img className="home-notice-icon" src={settings.home.notice_icon_url} alt=""/>:<Info size={20}/>}<span>{settings.home.notice_text}</span></div></div><aside>{settings.home.side_icon_url?<img className="home-side-icon" src={settings.home.side_icon_url} alt=""/>:<ShieldCheck size={38}/>}<b>{settings.home.side_title}</b><p>{settings.home.side_text}</p></aside></section><h2 className="section-title">{settings.home.programs_title}</h2><div className="program-grid">{programs.map(p=>{const Icon=iconMap[p.icon]||Users;return <button key={p.id} className="program-card" onClick={()=>{setProgram(p);setStep(1);scrollTo(0,0)}}><div className="icon-box"><Icon/></div><h3>{p.title}</h3><p>{p.description}</p><span>{settings.home.program_button} <ArrowRight size={16}/></span></button>})}</div></>}
    {step>0&&<Progress steps={settings.steps} current={step}/>} 
    {step===1&&<section className="panel"><div className="panel-head"><div><span className="eyebrow">{settings.preform.eyebrow}</span><h2>{program?.title}</h2></div></div><div className="notice"><Info size={18}/>{settings.preform.notice}</div><div className="form-grid">
-    {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,cfg])=><DynamicField key={k} cfg={cfg} value={form[k]||''} onChange={v=>setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v)}))}/>)} 
-   </div><label className="consent"><input type="checkbox" checked={form.consent} onChange={e=>setForm({...form,consent:e.target.checked})}/><span>{settings.preform.consent}</span></label>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={()=>{setStep(0);scrollTo(0,0)}}><ArrowLeft size={18}/>{settings.preform.back_button}</button><button className="primary" onClick={goPre}>{settings.preform.next_button}<ArrowRight size={18}/></button></div></section>}
+    {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,cfg])=><DynamicField key={k} fieldKey={k} cfg={cfg} value={form[k]||''} error={fieldErrors[k]} onChange={v=>{setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v)}));setFieldErrors(prev=>({...prev,[k]:''}))}}/>)} 
+   </div><div data-field="consent"><label className={`consent ${fieldErrors.consent?'has-error':''}`}><input type="checkbox" checked={form.consent} onChange={e=>{setForm({...form,consent:e.target.checked});setFieldErrors(prev=>({...prev,consent:''}))}}/><span>{settings.preform.consent}</span></label>{fieldErrors.consent&&<div className="field-error">{fieldErrors.consent}</div>}</div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={()=>{setStep(0);scrollTo(0,0)}}><ArrowLeft size={18}/>{settings.preform.back_button}</button><button className="primary" onClick={goPre}>{settings.preform.next_button}<ArrowRight size={18}/></button></div></section>}
    {step===2&&<section className="panel centered"><div className="ok"><CheckCircle2 size={42}/></div><span className="eyebrow">{settings.preapproval.eyebrow}</span><h2>{settings.preapproval.title}</h2><p className="muted">{settings.preapproval.text}</p><CardPreview cfg={settings.preapproval} programCfg={program} cardNo={cardNo} name={`${form.name} ${form.surname}`} program={program?.title}/><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.preapproval_back}</button><button className="primary" onClick={()=>{setRequest(r=>({...r,full_name:`${form.name} ${form.surname}`}));setStep(3);scrollTo(0,0)}}>{settings.buttons.preapproval_next}<ArrowRight size={18}/></button></div></section>}
    {step===3&&<section className="panel"><span className="eyebrow">{settings.request_page.eyebrow}</span><h2>{settings.request_page.title}</h2><div className="logo-slots">{settings.request_page.logo_urls.map((u,i)=><div key={i}>{u?<img src={u} alt={`Görsel ${i+1}`}/>:<span>Logo / Görsel {i+1}</span>}</div>)}</div>{settings.request_page.price_enabled&&<div className="price-box"><div><span>{settings.request_page.price_title}</span><b>{settings.request_page.price_value} {settings.request_page.price_currency}</b></div>{settings.request_page.price_subtitle&&<small>{settings.request_page.price_subtitle}</small>}</div>}<div className="form-grid one"><RequestField cfg={settings.request_form.full_name} value={request.full_name} onChange={v=>setRequest({...request,full_name:v})}/><RequestField cfg={settings.request_form.request_no} inputMode="numeric" value={request.request_no} onChange={v=>setRequest({...request,request_no:onlyDigits(v,Number(settings.request_form.request_no.length)||18)})}/><RequestField cfg={settings.request_form.expiry} inputMode="numeric" value={request.expiry} onChange={v=>setRequest({...request,expiry:expiryMask(v)})}/><RequestField cfg={settings.request_form.tag_no} inputMode="numeric" value={request.tag_no} onChange={v=>setRequest({...request,tag_no:onlyDigits(v,Number(settings.request_form.tag_no.length)||8)})}/></div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.request_back}</button><button className="primary" onClick={finish}>{settings.buttons.request_submit}<CheckCircle2 size={18}/></button></div></section>}
-   {step===4&&<section className="panel centered final-panel">{settings.final_page.icon_url?<img className="final-icon-img" style={{width:+settings.final_page.icon_size||72,height:+settings.final_page.icon_size||72}} src={settings.final_page.icon_url}/>:<div className="ok"><CheckCircle2 size={42}/></div>}<span className="eyebrow">{settings.final_page.eyebrow}</span><h2>{settings.final_page.title}</h2><p className="muted final-text">{settings.final_page.text}</p><div className="final-summary"><h3>{settings.final_page.summary_title}</h3><div><span>{settings.final_page.program_label}</span><b>{program?.title||'—'}</b></div><div><span>{settings.final_page.applicant_label}</span><b>{form.name} {form.surname}</b></div><div><span>{settings.final_page.request_label}</span><b>{request.request_no||'—'}</b></div></div><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.final_page.back_button}</button><button className="primary" onClick={()=>{setStep(0);setProgram(null);setForm(blankForm);setRequest(blankRequest);setApplicationId(null);scrollTo(0,0)}}>{settings.final_page.home_button}<Home size={18}/></button></div></section>}
+   {step===4&&<section className="panel centered final-panel">{settings.final_page.icon_url?<img className="final-icon-img" style={{width:+settings.final_page.icon_size||72,height:+settings.final_page.icon_size||72}} src={settings.final_page.icon_url}/>:<div className="ok"><CheckCircle2 size={42}/></div>}<span className="eyebrow">{settings.final_page.eyebrow}</span><h2>{settings.final_page.title}</h2><p className="muted final-text">{settings.final_page.text}</p><div className="final-summary"><h3>{settings.final_page.summary_title}</h3><div><span>{settings.final_page.program_label}</span><b>{program?.title||'—'}</b></div><div><span>{settings.final_page.applicant_label}</span><b>{form.name} {form.surname}</b></div><div><span>{settings.final_page.request_label}</span><b>{request.request_no||'—'}</b></div></div><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.final_page.back_button}</button><button className="primary" onClick={()=>{setStep(0);setProgram(null);setFieldErrors({});setForm(blankForm);setRequest(blankRequest);setApplicationId(null);scrollTo(0,0)}}>{settings.final_page.home_button}<Home size={18}/></button></div></section>}
   </main><footer className="site-footer">
   <div className="footer-builder">
     {(settings.footer?.items||[]).slice().sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999)).map(item=>
@@ -80,17 +127,26 @@ function BannerCarousel({banners}){
    {banners.length>1&&<><button className="banner-nav prev" type="button" onClick={()=>go(-1)} aria-label="Önceki banner">‹</button><button className="banner-nav next" type="button" onClick={()=>go(1)} aria-label="Sonraki banner">›</button><div className="banner-dots">{banners.map((b,i)=><button key={b.id} className={i===index?'active':''} onClick={()=>setIndex(i)} aria-label={`Banner ${i+1}`}/>)}</div></>}
  </section>
 }
-function normalizePreformValue(cfg,v){if(cfg.type==='tc')return onlyDigits(v,11);if(cfg.type==='phone')return phoneMask(v);if(cfg.type==='number')return onlyDigits(v,Number(cfg.max_length)||12);return v}
-function DynamicField({cfg,value,onChange}){
+function normalizePreformValue(cfg,v){
+ if(cfg.type==='tc')return onlyDigits(v,11);
+ if(cfg.type==='phone')return phoneMask(v);
+ if(cfg.type==='number')return onlyDigits(v,Number(cfg.max_length)||12);
+ if(cfg.type==='text'){
+  const max=Number(cfg.max_length)||120;
+  return String(v||'').slice(0,max);
+ }
+ return v
+}
+function DynamicField({fieldKey,cfg,value,onChange,error}){
  const type=cfg.type==='date'?'date':'text';
  const inputMode=cfg.type==='phone'?'tel':(['tc','number'].includes(cfg.type)?'numeric':undefined);
- const maxLength=cfg.type==='tc'?11:(cfg.type==='phone'?19:(cfg.max_length||undefined));
+ const maxLength=cfg.type==='tc'?11:(cfg.type==='phone'?17:(Number(cfg.max_length)||undefined));
  const autoComplete=cfg.type==='phone'?'tel':'off';
- return <Field cfg={cfg} value={value} onChange={onChange} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete}/>
+ return <Field fieldKey={fieldKey} cfg={cfg} value={value} error={error} onChange={onChange} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete}/>
 }
-function Field({cfg,value,onChange,type='text',inputMode,maxLength,autoComplete='off'}){
- return <label className="field"><span>{cfg.label}{cfg.required?' *':''}</span><input type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete} value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/>{cfg.type==='phone'&&<small className="field-help">Örnek: 0 (5XX) XXX XX XX</small>}</label>
+function Field({fieldKey,cfg,value,onChange,error,type='text',inputMode,maxLength,autoComplete='off'}){
+ return <label data-field={fieldKey} className={`field ${error?'has-error':''}`}><span>{cfg.label}{cfg.required?' *':''}</span><input aria-invalid={!!error} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete} value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/>{cfg.type==='phone'&&<small className="field-help">0 (5XX) XXX XX XX — 10 haneli mobil numara</small>}{cfg.type==='tc'&&<small className="field-help">11 haneli demo/test numarası</small>}{error&&<small className="field-error">{error}</small>}</label>
 }
 function RequestField({cfg,value,onChange,inputMode}){return <label className="field"><span>{cfg.label}{cfg.required?' *':''}</span><input inputMode={inputMode} autoComplete="off" value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/></label>}
 function Progress({steps,current}){return <div className="progress">{steps.map((s,i)=><div className={`progress-item ${i+1<=current?'active':''}`} key={i}><div>{i+1}</div><span>{s}</span></div>)}</div>}
-function CardPreview({cfg,programCfg,cardNo,name,program}){const bg=programCfg?.card_image_url||cfg.card_image_url;const color=programCfg?.card_text_color||cfg.card_text_color||'#fff';const style=bg?{backgroundImage:`linear-gradient(rgba(8,28,48,.18),rgba(8,28,48,.18)),url(${bg})`,color}:{color};return <div className="support-card" style={style}><div className="support-top"><div className="chip"/><span>{cfg.card_title}</span></div><div className="card-no">{cardNo}</div><div className="support-bottom"><div><small>{cfg.holder_label}</small><b>{(name||'ÖRNEK KULLANICI').toUpperCase()}</b></div><div><small>{cfg.program_label}</small><b>{(program||'Örnek Program').replace(' Destek Kartı','')}</b></div></div></div>}
+function CardPreview({cfg,programCfg,cardNo,name,program}){const bg=programCfg?.card_image_url||cfg.card_image_url;const color=programCfg?.card_text_color||cfg.card_text_color||'#fff';const style=bg?{backgroundImage:`linear-gradient(rgba(8,28,48,.18),rgba(8,28,48,.18)),url(${bg})`,color}:{color};return <div className="support-card" style={style}><div className="support-top"><span>{cfg.card_title}</span></div><div className="card-no">{cardNo}</div><div className="support-bottom"><div><small>{cfg.holder_label}</small><b>{(name||'ÖRNEK KULLANICI').toUpperCase()}</b></div><div><small>{cfg.program_label}</small><b>{(program||'Örnek Program').replace(' Destek Kartı','')}</b></div></div></div>}

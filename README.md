@@ -44,3 +44,19 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Footer artık dinamik blok sistemidir: yazı, logo/görsel, bağlantı, sıra, ekleme ve silme desteklenir.
 - Footer değişiklikleri admin panelinde canlı ön izlenir.
 - Ek SQL migration gerektirmez; ayarlar `site_settings.data` JSON alanında saklanır.
+
+
+## V9 — Ön başvuru doğrulama
+- Cep telefonu en fazla 10 ulusal hane kabul eder ve ekranda `0 (5XX) XXX XX XX` biçiminde maskelenir.
+- T.C. demo/test alanı 11 haneyi geçemez; yapısal kontrol uygulanır.
+- Sayısal alanlar yalnızca rakam kabul eder ve `max_length` sınırını geçemez.
+- Metin alanları admin ayarındaki `max_length` değerini geçemez.
+- Hatalar sayfa üstünde genel mesaj olarak değil, doğrudan yanlış alanın altında alan adıyla gösterilir.
+- İlk hatalı alan otomatik olarak ekrana getirilir ve odaklanır.
+
+
+## V9.1
+- Ön onay kartında uygulamanın sonradan eklediği yapay chip/kare kaldırıldı; yüklenen kart görseli olduğu gibi görünür.
+- Ön başvuru formuna İlçe'nin hemen altına zorunlu `Açık Adres` alanı eklendi.
+- Adres alanı: mahalle/köy, cadde, sokak, bina ve daire bilgisi için 10–180 karakter.
+- Eski Supabase site ayarlarında adres alanı yoksa uygulama otomatik olarak varsayılan adres alanını ekler; yeni SQL gerekmez.
