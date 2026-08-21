@@ -36,3 +36,11 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Admin > Ön Başvuru bölümünde her alan için `Form sırası` değiştirilebilir.
 - Görsel yükleme hatası için yeni `site-assets` bucket ve RLS politikaları eklenmiştir.
 - Supabase'de `supabase/v7-upgrade.sql` dosyasını bir kez çalıştırın.
+
+
+## V8
+- Ana sayfadaki hero kısa başlık, ana başlık, açıklama, bilgilendirme metni, sağ kart başlığı/açıklaması ve ikonları admin panelinden değiştirilebilir.
+- Bilgilendirme kutusu ve sağ kart için özel ikon yüklenebilir.
+- Footer artık dinamik blok sistemidir: yazı, logo/görsel, bağlantı, sıra, ekleme ve silme desteklenir.
+- Footer değişiklikleri admin panelinde canlı ön izlenir.
+- Ek SQL migration gerektirmez; ayarlar `site_settings.data` JSON alanında saklanır.

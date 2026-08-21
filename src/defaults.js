@@ -11,6 +11,8 @@ export const defaultSettings = {
     notice_text:'Bu çalışma proje sunumu içindir; herhangi bir kamu kurumunu temsil etmez ve gerçek başvuru kabul etmez.',
     side_title:'Tek Noktadan Başvuru',
     side_text:'Program seçimi, ön değerlendirme, kart ön izlemesi ve talep akışı.',
+    side_icon_url:'',
+    notice_icon_url:'',
     programs_title:'Başvuru Türünü Seçin',
     program_button:'Başvuruya Başla'
   },
@@ -55,7 +57,14 @@ export const defaultSettings = {
     icon_url:'', icon_size:72, summary_title:'Başvuru Özeti', program_label:'Program', applicant_label:'Başvuru Sahibi', request_label:'Talep Numarası',
     home_button:'Ana Sayfaya Dön', back_button:'Talep Sayfasına Dön'
   },
-  footer:{ text:'© 2026 Destek Kartları Proje Prototipi', subtext:'Resmî kurum sitesi değildir.' }
+  footer:{
+    text:'© 2026 Destek Kartları Proje Prototipi',
+    subtext:'Resmî kurum sitesi değildir.',
+    items:[
+      {id:'f1',type:'text',title:'Destek Kartları',text:'Proje prototipi bilgilendirme alanı.',image_url:'',url:'',order:1},
+      {id:'f2',type:'text',title:'Bilgilendirme',text:'Bu çalışma sunum amacıyla hazırlanmıştır.',image_url:'',url:'',order:2}
+    ]
+  }
 }
 
 export const defaultPrograms = [
