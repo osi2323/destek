@@ -71,19 +71,42 @@ export default function Admin(){
       <button className="secondary" onClick={()=>{const n=structuredClone(settings);n.footer=n.footer||{};n.footer.items=n.footer.items||[];n.footer.items.push({id:`footer-${Date.now()}`,type:'text',title:'Yeni Footer Alanı',text:'',image_url:'',url:'',order:n.footer.items.length+1});setSettings(n)}}>+ Footer alanı ekle</button>
       <SaveBar save={saveSettings} busy={busy}/>
     </Split>}
- {tab==='home'&&<Split title="Ana Sayfa Hero / İçerik" preview={<HomePreview s={settings}/>}>
-      <div className="admin-hint">Ekran görüntüsündeki sol hero alanı ve sağ mavi kartın tüm metinlerini buradan değiştirebilirsiniz.</div>
-      <Editor label="Üst kısa başlık" value={settings.home.eyebrow} onChange={v=>set(['home','eyebrow'],v)}/>
-      <Editor label="Hero başlığı" value={settings.home.hero_title} onChange={v=>set(['home','hero_title'],v)}/>
-      <Editor area label="Hero açıklaması" value={settings.home.hero_text} onChange={v=>set(['home','hero_text'],v)}/>
-      <Editor area label="Bilgilendirme kutusu" value={settings.home.notice_text} onChange={v=>set(['home','notice_text'],v)}/>
-      <UploadBox title="Bilgilendirme kutusu ikonu" hint="Önerilen 256×256 px, şeffaf PNG" onFile={f=>uploadSetting(f,['home','notice_icon_url'],'home-notice-icon')}/>
-      <h3 className="subhead">Sağ mavi kart</h3>
-      <Editor label="Sağ kart başlığı" value={settings.home.side_title} onChange={v=>set(['home','side_title'],v)}/>
-      <Editor area label="Sağ kart açıklaması" value={settings.home.side_text} onChange={v=>set(['home','side_text'],v)}/>
-      <UploadBox title="Sağ kart ikonu" hint="Önerilen 512×512 px, şeffaf PNG" onFile={f=>uploadSetting(f,['home','side_icon_url'],'home-side-icon')}/>
-      <Editor label="Programlar bölüm başlığı" value={settings.home.programs_title} onChange={v=>set(['home','programs_title'],v)}/>
-      <Editor label="Program butonu" value={settings.home.program_button} onChange={v=>set(['home','program_button'],v)}/>
+ {tab==='home'&&<Split title="Ana Sayfa Yeni Tasarım" preview={<HomePreview s={settings}/>}>
+      <div className="admin-hint">Ana sayfa referans görselindeki yerleşime göre hazırlanmıştır. Kurum logoları yerine aşağıdaki alanlara kendi sunum logolarınızı/görsellerinizi yükleyebilirsiniz.</div>
+      <h3 className="subhead">Üst Header Logo Alanları</h3>
+      <div className="admin-grid two">
+       <UploadBox title="Sol üst logo" hint="Önerilen: 620×180 px, şeffaf PNG" onFile={f=>uploadSetting(f,['home','header_left_logo_url'],'home-left-logo')}/>
+       <UploadBox title="Sağ üst logo" hint="Önerilen: 620×180 px, şeffaf PNG" onFile={f=>uploadSetting(f,['home','header_right_logo_url'],'home-right-logo')}/>
+      </div>
+      <h3 className="subhead">Ana Hero</h3>
+      <Editor label="Kısa başlık" value={settings.home.eyebrow} onChange={v=>set(['home','eyebrow'],v)}/>
+      <Editor label="Ana başlık" value={settings.home.hero_title} onChange={v=>set(['home','hero_title'],v)}/>
+      <Editor area label="Açıklama" value={settings.home.hero_text} onChange={v=>set(['home','hero_text'],v)}/>
+      <Editor label="Birinci buton" value={settings.home.hero_primary_button} onChange={v=>set(['home','hero_primary_button'],v)}/>
+      <Editor label="İkinci buton" value={settings.home.hero_secondary_button} onChange={v=>set(['home','hero_secondary_button'],v)}/>
+      <UploadBox title="Hero ana görseli" hint="Önerilen: 1200×900 px, PNG/WebP. İnsan/grup görseli için şeffaf arka plan idealdir." onFile={f=>uploadSetting(f,['home','hero_image_url'],'home-hero-image')}/>
+      <UploadBox title="Hero üzerindeki kart görseli" hint="Önerilen: 1600×1000 px, PNG/WebP" onFile={f=>uploadSetting(f,['home','hero_card_image_url'],'home-hero-card')}/>
+
+      <h3 className="subhead">4 Adımlı Süreç Alanı</h3>
+      {(settings.home.process_items||[]).map((x,i)=><div className="field-config" key={i}><b>{i+1}. Adım</b><Editor label="Başlık" value={x.title} onChange={v=>set(['home','process_items',i,'title'],v)}/><Editor label="Açıklama" value={x.text} onChange={v=>set(['home','process_items',i,'text'],v)}/></div>)}
+
+      <h3 className="subhead">Program Alanı</h3>
+      <Editor label="Programlar başlığı" value={settings.home.programs_title} onChange={v=>set(['home','programs_title'],v)}/>
+      <Editor label="Programlar alt açıklaması" value={settings.home.programs_subtitle} onChange={v=>set(['home','programs_subtitle'],v)}/>
+      <div className="admin-hint">Her program kartına ana sayfada ayrı görsel yükleyebilirsiniz. Görsel yüklemezsen mevcut ikon kullanılır.</div>
+      {programs.map(p=><div className="inline-upload" key={p.id}><UploadBox title={`${p.title} ana sayfa görseli`} hint="Önerilen: 600×420 px PNG/WebP" onFile={f=>uploadSetting(f,['home','program_images',p.id],`home-program-${p.id}`)}/>{settings.home.program_images?.[p.id]&&<img src={settings.home.program_images[p.id]}/>}</div>)}
+
+      <h3 className="subhead">İstatistik Bandı</h3>
+      {(settings.home.stats||[]).map((x,i)=><div className="field-config" key={i}><b>#{i+1}</b><Editor label="Değer" value={x.value} onChange={v=>set(['home','stats',i,'value'],v)}/><Editor label="Etiket" value={x.label} onChange={v=>set(['home','stats',i,'label'],v)}/></div>)}
+
+      <h3 className="subhead">Alt Promosyon Alanı</h3>
+      <Editor label="Başlık" value={settings.home.promo_title} onChange={v=>set(['home','promo_title'],v)}/>
+      <Editor area label="Metin" value={settings.home.promo_text} onChange={v=>set(['home','promo_text'],v)}/>
+      <Editor label="Buton" value={settings.home.promo_button} onChange={v=>set(['home','promo_button'],v)}/>
+      <UploadBox title="Alt promosyon görseli" hint="Önerilen: 800×600 px PNG/WebP" onFile={f=>uploadSetting(f,['home','promo_image_url'],'home-promo-image')}/>
+
+      <h3 className="subhead">Alt Mobil Menü Yazıları</h3>
+      <div className="step-editor-grid">{(settings.home.bottom_nav||[]).map((v,i)=><Editor key={i} label={`${i+1}. menü`} value={v} onChange={x=>set(['home','bottom_nav',i],x)}/>)}</div>
       <SaveBar save={saveSettings} busy={busy}/>
     </Split>}
  {tab==='preform'&&<Split title="Ön Başvuru Sayfası" preview={<PreformPreview s={settings}/>}><Editor label="Üst kısa başlık" value={settings.preform.eyebrow} onChange={v=>set(['preform','eyebrow'],v)}/><Editor area label="Bilgilendirme" value={settings.preform.notice} onChange={v=>set(['preform','notice'],v)}/><Editor area label="Onay kutusu metni" value={settings.preform.consent} onChange={v=>set(['preform','consent'],v)}/><Editor label="Geri butonu" value={settings.preform.back_button} onChange={v=>set(['preform','back_button'],v)}/><Editor label="İleri butonu" value={settings.preform.next_button} onChange={v=>set(['preform','next_button'],v)}/><div className="section-row"><h3 className="subhead">Form alanları</h3><button type="button" className="secondary small-btn" onClick={addPreformField}><Plus size={16}/> Alan ekle</button></div><p className="muted">Alanları buradan ekleyebilir, silebilir, zorunlu/görünür yapabilir ve türünü değiştirebilirsin. Yeni alanlar başvuruda Ek Alanlar olarak saklanır.</p>{Object.entries(settings.preform.fields).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,f])=><div className="field-config" key={k}><div className="field-config-head"><b>{f.label||k}</b><button type="button" className="danger-icon" title="Alanı sil" onClick={()=>removePreformField(k)}><Trash2 size={16}/></button></div><Editor label="Etiket" value={f.label} onChange={v=>set(['preform','fields',k,'label'],v)}/><Editor label="Placeholder" value={f.placeholder} onChange={v=>set(['preform','fields',k,'placeholder'],v)}/><label className="mini">Form sırası<input type="number" min="1" max="99" value={f.order||1} onChange={e=>set(['preform','fields',k,'order'],+e.target.value)}/></label><label className="editor"><span>Alan türü</span><select value={f.type||'text'} onChange={e=>set(['preform','fields',k,'type'],e.target.value)}><option value="text">Metin</option><option value="number">Sadece rakam</option><option value="date">Tarih</option><option value="phone">Telefon</option><option value="tc">11 haneli demo kimlik no</option></select></label>{f.type==='number'&&<label className="mini">Maks. hane<input type="number" min="1" max="40" value={f.max_length||12} onChange={e=>set(['preform','fields',k,'max_length'],+e.target.value)}/></label>}<Toggle label="Zorunlu" value={f.required} onChange={v=>set(['preform','fields',k,'required'],v)}/><Toggle label="Göster" value={f.visible} onChange={v=>set(['preform','fields',k,'visible'],v)}/></div>)}<SaveBar save={saveSettings} busy={busy}/></Split>}
@@ -106,7 +129,7 @@ function Toggle({label,value,onChange}){return <label className="toggle"><input 
 function UploadBox({title,hint,onFile}){return <label className="upload compact"><Image size={22}/><b>{title}</b><span>{hint}</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>onFile(e.target.files?.[0])}/></label>}
 function SaveBar({save,busy}){return <div className="savebar"><button disabled={busy} className="primary" onClick={save}><Save size={17}/>{busy?'Kaydediliyor...':'Değişiklikleri kaydet'}</button></div>}
 function GlobalPreview({s}){return <div className="mini-site"><div className="mini-demo"><b>DEMO PROTOTİP</b> — {s.demo_ribbon?.text}</div>{s.top_bar.enabled&&<div className="mini-top">{s.top_bar.text}</div>}<div className="mini-header"><ShieldCheck/><div><b>{s.site_title}</b><small>{s.site_subtitle}</small></div><span>{s.header.safe_text}</span></div><div className="mini-body">İçerik alanı</div><div className="mini-footer-grid">{(s.footer?.items||[]).slice().sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999)).map(x=><div key={x.id}>{x.image_url&&<img src={x.image_url}/>}<b>{x.title}</b><span>{x.text}</span></div>)}</div><div className="mini-footer"><b>{s.footer.text}</b><span>{s.footer.subtext}</span></div></div>}
-function HomePreview({s}){return <div className="mini-page"><span className="eyebrow">{s.home.eyebrow}</span><h2>{s.home.hero_title}</h2><p>{s.home.hero_text}</p><div className="mini-notice">{s.home.notice_icon_url&&<img src={s.home.notice_icon_url}/>}<span>{s.home.notice_text}</span></div><div className="mini-side">{s.home.side_icon_url&&<img src={s.home.side_icon_url}/>}<b>{s.home.side_title}</b><p>{s.home.side_text}</p></div><h3>{s.home.programs_title}</h3><button>{s.home.program_button} →</button></div>}
+function HomePreview({s}){const h=s.home;return <div className="mini-page new-home-preview"><div className="mini-dual-logo"><span>{h.header_left_logo_url?<img src={h.header_left_logo_url}/>:<>SOL LOGO</>}</span><span>{h.header_right_logo_url?<img src={h.header_right_logo_url}/>:<>SAĞ LOGO</>}</span></div><div className="mini-new-hero"><div><small>{h.eyebrow}</small><h2>{h.hero_title}</h2><p>{h.hero_text}</p><button>{h.hero_primary_button}</button></div><div>{h.hero_image_url?<img src={h.hero_image_url}/>:<Users size={48}/>}</div></div><div className="mini-steps">{(h.process_items||[]).slice(0,4).map((x,i)=><div key={i}><b>{i+1}</b><span>{x.title}</span></div>)}</div><h3>{h.programs_title}</h3><div className="mini-program-cards">{Object.values(h.program_images||{}).slice(0,4).map((u,i)=><img key={i} src={u}/>)}</div><div className="mini-stats">{(h.stats||[]).map((x,i)=><span key={i}><b>{x.value}</b>{x.label}</span>)}</div></div>}
 function PreformPreview({s}){return <div className="mini-page"><span className="eyebrow">{s.preform.eyebrow}</span><h2>Örnek Program</h2><div className="mini-notice">{s.preform.notice}</div><div className="mini-form">{Object.values(s.preform.fields).filter(f=>f.visible).slice(0,6).map((f,i)=><label key={i}><span>{f.label}{f.required?' *':''}</span><input placeholder={f.placeholder}/></label>)}</div><div className="mini-consent">☐ {s.preform.consent}</div><div className="mini-buttons"><button>{s.preform.back_button}</button><button>{s.preform.next_button}</button></div></div>}
 function StepsPreview({s}){return <div className="mini-page"><div className="mini-steps">{s.steps.map((x,i)=><div key={i}><b>{i+1}</b><span>{x}</span></div>)}</div><div className="mini-buttons"><button>{s.buttons.preapproval_back}</button><button>{s.buttons.preapproval_next}</button></div><div className="mini-buttons"><button>{s.buttons.request_back}</button><button>{s.buttons.request_submit}</button></div></div>}
 function PreapprovalPreview({s}){const c=s.preapproval;return <div className="mini-page centered"><span className="eyebrow">{c.eyebrow}</span><h2>{c.title}</h2><p>{c.text}</p><div className="mini-support-card" style={c.card_image_url?{backgroundImage:`url(${c.card_image_url})`,color:c.card_text_color}:{color:c.card_text_color}}><b>{c.card_title}</b><strong>1234 5678 9012 3456</strong><div><span>{c.holder_label}<b>ÖRNEK KULLANICI</b></span><span>{c.program_label}<b>ÖRNEK</b></span></div></div></div>}

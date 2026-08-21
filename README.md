@@ -106,3 +106,12 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - `Talebi tamamla` aynı satırı `submitted` yapar.
 - Admin paneli yeni tabloyu okuyup payload'ı mevcut kolon görünümüne dönüştürür.
 - `v10_5-upgrade.sql` kendi içinde bir test kayıt oluşturup siler; SQL `Success` dönerse RPC de gerçekten çalışmış demektir.
+
+
+## V10.6 — Referans görsele göre yeni ana sayfa
+- Admin paneli ve çalışan Supabase/taslak sistemi korunmuştur.
+- Ana sayfa referans taslağa yakın kırmızı/beyaz, kart tabanlı, responsive bir arayüze dönüştürülmüştür.
+- Gerçek kurum logoları pakete eklenmemiştir. Referanstaki aynı üst konumlara admin panelinden iki ayrı logo yükleme alanı eklenmiştir.
+- Hero ana görseli, hero kart görseli, her program için ayrı ana sayfa görseli ve alt promosyon görseli admin panelinden yüklenebilir.
+- Ana başlıklar, CTA butonları, süreç adımları, istatistikler ve mobil alt menü yazıları admin panelinden düzenlenebilir.
+- Yeni SQL migration gerekmez; tüm yeni ana sayfa alanları `site_settings.data` JSON içinde saklanır.

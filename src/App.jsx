@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react'
-import {ArrowLeft,ArrowRight,BadgeCheck,CheckCircle2,GraduationCap,HeartHandshake,Home,Info,Landmark,ShieldCheck,Store,Users} from 'lucide-react'
+import {ArrowLeft,ArrowRight,BadgeCheck,CheckCircle2,GraduationCap,HeartHandshake,Home,Info,Landmark,ShieldCheck,Store,Users,Menu,Eye,LockKeyhole,Headphones,FileText,Search,Contact,WalletCards,UserRoundCheck} from 'lucide-react'
 import {defaultPrograms,defaultSettings} from './defaults'
 import {supabase,supabaseEnabled} from './supabase'
 
@@ -144,10 +144,10 @@ export default function App(){
  const pf=settings.preform.fields
  return <div className="public-app">
   <div className="demo-ribbon"><strong>DEMO PROTOTİP</strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
-  {settings.top_bar.enabled&&<div className="top-announcement">{settings.top_bar.text}</div>}
-  <header className="site-header"><div className="brand">{settings.header.logo_url?<img className="header-logo" src={settings.header.logo_url}/>:<div className="brand-mark"><ShieldCheck size={28}/></div>}<div><b>{settings.site_title}</b><small>{settings.site_subtitle}</small></div></div><div className="safe"><BadgeCheck size={18}/>{settings.header.safe_text}</div></header>
-  <main className="shell">
-   {step===0&&<>{banners.length>0&&<BannerCarousel banners={banners.slice(0,8)}/>}<section className="hero"><div><span className="eyebrow">{settings.home.eyebrow}</span><h1>{settings.home.hero_title}</h1><p>{settings.home.hero_text}</p><div className="notice">{settings.home.notice_icon_url?<img className="home-notice-icon" src={settings.home.notice_icon_url} alt=""/>:<Info size={20}/>}<span>{settings.home.notice_text}</span></div></div><aside>{settings.home.side_icon_url?<img className="home-side-icon" src={settings.home.side_icon_url} alt=""/>:<ShieldCheck size={38}/>}<b>{settings.home.side_title}</b><p>{settings.home.side_text}</p></aside></section><h2 className="section-title">{settings.home.programs_title}</h2><div className="program-grid">{programs.map(p=>{const Icon=iconMap[p.icon]||Users;return <button key={p.id} className="program-card" onClick={()=>{setProgram(p);setStep(1);scrollTo(0,0)}}><div className="icon-box"><Icon/></div><h3>{p.title}</h3><p>{p.description}</p><span>{settings.home.program_button} <ArrowRight size={16}/></span></button>})}</div></>}
+  {step>0&&settings.top_bar.enabled&&<div className="top-announcement">{settings.top_bar.text}</div>}
+  {step>0&&<header className="site-header"><div className="brand">{settings.header.logo_url?<img className="header-logo" src={settings.header.logo_url}/>:<div className="brand-mark"><ShieldCheck size={28}/></div>}<div><b>{settings.site_title}</b><small>{settings.site_subtitle}</small></div></div><div className="safe"><BadgeCheck size={18}/>{settings.header.safe_text}</div></header>}
+  <main className={step===0?'showcase-shell':'shell'}>
+   {step===0&&<ShowcaseHome settings={settings} programs={programs} onProgram={p=>{setProgram(p);setStep(1);scrollTo(0,0)}} onStart={()=>{document.getElementById('home-programs')?.scrollIntoView({behavior:'smooth'})}}/>}
    {step>0&&<Progress steps={settings.steps} current={step}/>} 
    {step===1&&<section className="panel"><div className="panel-head"><div><span className="eyebrow">{settings.preform.eyebrow}</span><h2>{program?.title}</h2></div></div><div className="notice"><Info size={18}/>{settings.preform.notice}</div><div className="form-grid">
     {Object.entries(pf||{}).filter(([,cfg])=>cfg.visible).sort((a,b)=>(Number(a[1]?.order)||999)-(Number(b[1]?.order)||999)).map(([k,cfg])=><DynamicField key={k} fieldKey={k} cfg={cfg} value={form[k]||''} error={fieldErrors[k]} onChange={v=>{setForm(prev=>({...prev,[k]:normalizePreformValue(cfg,v,k)}));setFieldErrors(prev=>({...prev,[k]:''}))}}/>)} 
@@ -170,6 +170,72 @@ export default function App(){
   </div>
   <div className="footer-bottom"><b>{settings.footer.text}</b><span>{settings.footer.subtext}</span></div>
 </footer>
+ </div>
+}
+
+function ShowcaseHome({settings,programs,onProgram,onStart}){
+ const h=settings.home||{};
+ const steps=(h.process_items||[]).slice(0,4);
+ const stats=(h.stats||[]).slice(0,4);
+ const navIcons=[Home,WalletCards,FileText,Search,Headphones];
+ return <div className="showcase-home">
+  <header className="showcase-header">
+   <div className="showcase-brand-slot">
+    {h.header_left_logo_url?<img src={h.header_left_logo_url} alt="Sol logo"/>:<div className="showcase-logo-placeholder"><ShieldCheck/><span>LOGO YÜKLE</span></div>}
+   </div>
+   <div className="showcase-brand-divider"/>
+   <div className="showcase-brand-slot showcase-brand-right">
+    {h.header_right_logo_url?<img src={h.header_right_logo_url} alt="Sağ logo"/>:<div className="showcase-logo-placeholder"><BadgeCheck/><span>LOGO YÜKLE</span></div>}
+   </div>
+   <button className="showcase-menu" type="button" aria-label="Menü"><Menu/></button>
+  </header>
+
+  <section className="showcase-hero">
+   <div className="showcase-hero-copy">
+    <span className="showcase-kicker">{h.eyebrow}</span>
+    <h1>{h.hero_title}</h1>
+    <p>{h.hero_text}</p>
+    <div className="showcase-hero-buttons">
+     <button className="showcase-primary" onClick={onStart}>{h.hero_primary_button}<ArrowRight/></button>
+     <button className="showcase-secondary" onClick={onStart}>{h.hero_secondary_button}<Eye/></button>
+    </div>
+    <div className="showcase-trust">
+     <span><LockKeyhole/> Mobil Uyumlu</span>
+     <span><ArrowRight/> Hızlı Akış</span>
+     <span><Headphones/> Kolay Kullanım</span>
+    </div>
+   </div>
+   <div className="showcase-hero-visual">
+    {h.hero_image_url?<img className="showcase-people" src={h.hero_image_url} alt="Ana sayfa görseli"/>:<div className="showcase-visual-placeholder"><Users size={62}/><b>ANA GÖRSEL</b><span>Admin panelinden yükleyin</span></div>}
+    {h.hero_card_image_url&&<img className="showcase-floating-card" src={h.hero_card_image_url} alt="Kart görseli"/>}
+   </div>
+  </section>
+
+  <section className="showcase-process">
+   {steps.map((x,i)=>{const Icon=[WalletCards,FileText,UserRoundCheck,CheckCircle2][i]||CheckCircle2;return <div className="showcase-process-item" key={i}><div className={`process-icon p${i+1}`}><Icon/></div><b>{i+1}</b><h3>{x.title}</h3><p>{x.text}</p></div>})}
+  </section>
+
+  <section className="showcase-programs" id="home-programs">
+   <div className="showcase-section-heading"><span>{h.eyebrow}</span><h2>{h.programs_title}</h2><p>{h.programs_subtitle}</p></div>
+   <div className="showcase-program-grid">{programs.map((p,i)=>{const Icon=iconMap[p.icon]||Users;const img=h.program_images?.[p.id];return <button className={`showcase-program-card card-tone-${i%4}`} key={p.id} onClick={()=>onProgram(p)}>
+     <div className="program-visual">{img?<img src={img} alt=""/>:<Icon/>}</div>
+     <h3>{p.title}</h3><p>{p.description}</p><span><ArrowRight/></span>
+    </button>})}</div>
+  </section>
+
+  <section className="showcase-stats">
+   {stats.map((x,i)=><div key={i}><strong>{x.value}</strong><span>{x.label}</span></div>)}
+  </section>
+
+  <section className="showcase-promo">
+   <div className="showcase-promo-image">{h.promo_image_url?<img src={h.promo_image_url} alt="Promosyon görseli"/>:<WalletCards size={64}/>}</div>
+   <div className="showcase-promo-copy"><h2>{h.promo_title}</h2><p>{h.promo_text}</p></div>
+   <button className="showcase-primary" onClick={onStart}>{h.promo_button}<ArrowRight/></button>
+  </section>
+
+  <nav className="showcase-bottom-nav">
+   {(h.bottom_nav||[]).slice(0,5).map((label,i)=>{const Icon=navIcons[i]||Home;return <button key={i} onClick={i===1||i===2?onStart:undefined}><Icon/><span>{label}</span></button>})}
+  </nav>
  </div>
 }
 function BannerCarousel({banners}){
