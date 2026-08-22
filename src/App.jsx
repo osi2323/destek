@@ -165,7 +165,7 @@ useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=awai
  </div>
 }
  return <div className="public-app">
-  <div className="demo-ribbon"><strong>DEMO PROTOTİP</strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
+  <div className="demo-ribbon"><strong></strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
   {step>0&&settings.top_bar.enabled&&<div className="top-announcement">{settings.top_bar.text}</div>}
   {step>0&&<header className="site-header"><div className="brand">{settings.header.logo_url?<img className="header-logo" src={settings.header.logo_url}/>:<div className="brand-mark"><ShieldCheck size={28}/></div>}<div><b>{settings.site_title}</b><small>{settings.site_subtitle}</small></div></div><div className="safe"><BadgeCheck size={18}/>{settings.header.safe_text}</div></header>}
   <main className={step===0?'showcase-shell':'shell'}>
