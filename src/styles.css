@@ -470,3 +470,248 @@
     bottom:1%;
   }
 }
+
+
+/* ===== V10.11 MOBİL HERO KESİN ÜST KONUM ===== */
+.showcase-mobile-hero-visual{
+  display:none;
+}
+
+@media(max-width:900px){
+  .showcase-hero{
+    display:block!important;
+  }
+
+  /* Mobilde masaüstü görsel bloğunu tamamen kapatıyoruz */
+  .showcase-hero > .showcase-hero-visual{
+    display:none!important;
+  }
+
+  /* Görsel DOM'da metinden önce; bu yüzden kesin olarak üstte */
+  .showcase-mobile-hero-visual{
+    position:relative;
+    display:grid!important;
+    place-items:center;
+    width:100%;
+    min-height:340px;
+    padding:14px 18px 0;
+    overflow:hidden;
+    background:radial-gradient(circle at 50% 60%,rgba(239,30,39,.08),transparent 55%);
+  }
+
+  .showcase-mobile-people{
+    display:block;
+    width:100%;
+    max-width:680px;
+    height:330px;
+    object-fit:contain;
+    object-position:center bottom;
+    margin:0 auto;
+  }
+
+  .showcase-mobile-floating-card{
+    position:absolute;
+    width:min(62%,410px);
+    right:4%;
+    bottom:2%;
+    transform:rotate(6deg);
+    border-radius:16px;
+    filter:drop-shadow(0 14px 24px rgba(0,0,0,.18));
+  }
+
+  .showcase-hero-copy{
+    width:100%;
+    padding:26px 28px 34px!important;
+  }
+}
+
+@media(max-width:620px){
+  .showcase-mobile-hero-visual{
+    min-height:285px;
+    padding:8px 10px 0;
+  }
+
+  .showcase-mobile-people{
+    height:280px;
+    max-width:100%;
+  }
+
+  .showcase-mobile-floating-card{
+    width:66%;
+    right:2%;
+    bottom:1%;
+  }
+
+  .showcase-hero-copy{
+    padding:20px 18px 28px!important;
+  }
+}
+
+
+/* ===== V10.12 YENİ BAŞVURU ADIM GÖRÜNÜMÜ ===== */
+.progress-showcase{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:0!important;
+  padding:20px 22px!important;
+  margin:24px 0!important;
+  background:#fff!important;
+  border:1px solid #e7ebef!important;
+  border-radius:20px!important;
+  box-shadow:0 12px 30px rgba(24,40,57,.06)!important;
+}
+
+.progress-showcase-item{
+  position:relative;
+  min-width:0;
+  text-align:center;
+}
+
+.progress-showcase-track{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:8px;
+}
+
+.progress-showcase-icon{
+  position:relative;
+  z-index:2;
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  border:2px solid #dfe5ea;
+  background:#f5f7f9;
+  color:#9aa7b3;
+  transition:.25s ease;
+}
+
+.progress-showcase-icon svg{
+  width:22px;
+  height:22px;
+}
+
+.progress-showcase-line{
+  position:absolute;
+  left:50%;
+  width:100%;
+  height:3px;
+  background:#e2e7ec;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:1;
+}
+
+.progress-showcase-copy{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+}
+
+.progress-showcase-number{
+  display:grid;
+  place-items:center;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:#e6ebef;
+  color:#647383;
+  font-size:11px;
+  font-weight:900;
+}
+
+.progress-showcase-copy strong{
+  font-size:13px;
+  color:#566575;
+  font-weight:800;
+}
+
+.progress-showcase-item.done .progress-showcase-icon{
+  background:#e21a24;
+  border-color:#e21a24;
+  color:#fff;
+  box-shadow:0 8px 18px rgba(226,26,36,.18);
+}
+.progress-showcase-item.done .progress-showcase-number{
+  background:#e21a24;
+  color:#fff;
+}
+.progress-showcase-item.done .progress-showcase-line{
+  background:#e21a24;
+}
+.progress-showcase-item.done .progress-showcase-copy strong{
+  color:#283747;
+}
+
+.progress-showcase-item.current .progress-showcase-icon{
+  background:linear-gradient(135deg,#d80c17,#f02a33);
+  border-color:#e21a24;
+  color:#fff;
+  transform:scale(1.08);
+  box-shadow:0 10px 26px rgba(226,26,36,.24);
+}
+.progress-showcase-item.current .progress-showcase-number{
+  background:#e21a24;
+  color:#fff;
+}
+.progress-showcase-item.current .progress-showcase-copy strong{
+  color:#d21821;
+}
+
+.final-only-home{
+  justify-content:center!important;
+  margin-top:26px;
+}
+.final-only-home .primary{
+  min-width:220px;
+}
+
+@media(max-width:720px){
+  .progress-showcase{
+    padding:14px 8px!important;
+    border-radius:16px!important;
+  }
+  .progress-showcase-icon{
+    width:42px;
+    height:42px;
+  }
+  .progress-showcase-icon svg{
+    width:19px;
+    height:19px;
+  }
+  .progress-showcase-copy strong{
+    font-size:10px;
+    line-height:1.2;
+  }
+  .progress-showcase-number{
+    width:19px;
+    height:19px;
+    font-size:10px;
+  }
+}
+
+@media(max-width:430px){
+  .progress-showcase{
+    width:100%;
+    gap:0!important;
+    padding:12px 5px!important;
+  }
+  .progress-showcase-icon{
+    width:38px;
+    height:38px;
+  }
+  .progress-showcase-copy strong{
+    font-size:9px;
+  }
+  .progress-showcase-line{
+    height:2px;
+  }
+  .final-only-home .primary{
+    width:100%;
+    min-width:0;
+  }
+}

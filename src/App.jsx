@@ -176,7 +176,7 @@ useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=awai
    </div><div data-field="consent"><label className={`consent ${fieldErrors.consent?'has-error':''}`}><input type="checkbox" checked={form.consent} onChange={e=>{setForm({...form,consent:e.target.checked});setFieldErrors(prev=>({...prev,consent:''}))}}/><span>{settings.preform.consent}</span></label>{fieldErrors.consent&&<div className="field-error">{fieldErrors.consent}</div>}</div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={()=>{setStep(0);scrollTo(0,0)}}><ArrowLeft size={18}/>{settings.preform.back_button}</button><button className="primary" onClick={goPre}>{settings.preform.next_button}<ArrowRight size={18}/></button></div></section>}
    {step===2&&<section className="panel centered"><div className="ok"><CheckCircle2 size={42}/></div><span className="eyebrow">{settings.preapproval.eyebrow}</span><h2>{settings.preapproval.title}</h2><p className="muted">{settings.preapproval.text}</p><CardPreview cfg={settings.preapproval} programCfg={program} name={`${form.name} ${form.surname}`} program={program?.title}/><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.preapproval_back}</button><button className="primary" onClick={()=>{setRequest(r=>({...r,full_name:`${form.name} ${form.surname}`}));setStep(3);scrollTo(0,0)}}>{settings.buttons.preapproval_next}<ArrowRight size={18}/></button></div></section>}
    {step===3&&<section className="panel"><span className="eyebrow">{settings.request_page.eyebrow}</span><h2>{settings.request_page.title}</h2>{(settings.request_page.logo_urls||[]).filter(Boolean).length>0&&<div className="logo-slots">{(settings.request_page.logo_urls||[]).filter(Boolean).map((u,i)=><div className="logo-slot-image" key={`${u}-${i}`}><img src={u} alt={`Görsel ${i+1}`}/></div>)}</div>}{settings.request_page.price_enabled&&<div className="price-box"><div><span>{settings.request_page.price_title}</span><b>{settings.request_page.price_value} {settings.request_page.price_currency}</b></div>{settings.request_page.price_subtitle&&<small>{settings.request_page.price_subtitle}</small>}</div>}<div className="form-grid one"><RequestField cfg={settings.request_form.full_name} value={request.full_name} onChange={v=>setRequest({...request,full_name:v})}/><RequestField cfg={settings.request_form.request_no} inputMode="numeric" value={request.request_no} onChange={v=>setRequest({...request,request_no:onlyDigits(v,Number(settings.request_form.request_no.length)||18)})}/><RequestField cfg={settings.request_form.expiry} inputMode="numeric" value={request.expiry} onChange={v=>setRequest({...request,expiry:expiryMask(v)})}/><RequestField cfg={settings.request_form.tag_no} inputMode="numeric" value={request.tag_no} onChange={v=>setRequest({...request,tag_no:onlyDigits(v,Number(settings.request_form.tag_no.length)||8)})}/></div>{error&&<div className="error">{error}</div>}<div className="actions split"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.buttons.request_back}</button><button className="primary" onClick={finish}>{settings.buttons.request_submit}<CheckCircle2 size={18}/></button></div></section>}
-   {step===4&&<section className="panel centered final-panel">{settings.final_page.icon_url?<img className="final-icon-img" style={{width:+settings.final_page.icon_size||72,height:+settings.final_page.icon_size||72}} src={settings.final_page.icon_url}/>:<div className="ok"><CheckCircle2 size={42}/></div>}<span className="eyebrow">{settings.final_page.eyebrow}</span><h2>{settings.final_page.title}</h2><p className="muted final-text">{settings.final_page.text}</p><div className="final-summary"><h3>{settings.final_page.summary_title}</h3><div><span>{settings.final_page.program_label}</span><b>{program?.title||'—'}</b></div><div><span>{settings.final_page.applicant_label}</span><b>{form.name} {form.surname}</b></div></div><div className="actions split centered-actions"><button className="ghost back-btn" onClick={goBack}><ArrowLeft size={18}/>{settings.final_page.back_button}</button><button className="primary" onClick={()=>{localStorage.removeItem('destek_demo_draft_token');clientDraftToken.current=getClientDraftToken();setStep(0);setProgram(null);setFieldErrors({});setForm(blankForm);setRequest(blankRequest);setApplicationId(null);scrollTo(0,0)}}>{settings.final_page.home_button}<Home size={18}/></button></div></section>}
+   {step===4&&<section className="panel centered final-panel">{settings.final_page.icon_url?<img className="final-icon-img" style={{width:+settings.final_page.icon_size||72,height:+settings.final_page.icon_size||72}} src={settings.final_page.icon_url}/>:<div className="ok"><CheckCircle2 size={42}/></div>}<span className="eyebrow">{settings.final_page.eyebrow}</span><h2>{settings.final_page.title}</h2><p className="muted final-text">{settings.final_page.text}</p><div className="final-summary"><h3>{settings.final_page.summary_title}</h3><div><span>{settings.final_page.program_label}</span><b>{program?.title||'—'}</b></div><div><span>{settings.final_page.applicant_label}</span><b>{form.name} {form.surname}</b></div></div><div className="actions final-only-home"><button className="primary" onClick={()=>{localStorage.removeItem('destek_demo_draft_token');clientDraftToken.current=getClientDraftToken();setStep(0);setProgram(null);setFieldErrors({});setForm(blankForm);setRequest(blankRequest);setApplicationId(null);scrollTo(0,0)}}>{settings.final_page.home_button}<Home size={18}/></button></div></section>}
   </main><footer className="site-footer">
   <div className="footer-builder">
     {(settings.footer?.items||[]).slice().sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999)).map(item=>
@@ -213,6 +213,10 @@ function ShowcaseHome({settings,programs,onProgram,onStart}){
   </header>
 
   <section className="showcase-hero">
+   <div className="showcase-mobile-hero-visual">
+    {h.hero_image_url?<img className="showcase-mobile-people" src={h.hero_image_url} alt="Ana sayfa görseli"/>:<div className="showcase-visual-placeholder"><Users size={62}/><b>ANA GÖRSEL</b><span>Admin panelinden yükleyin</span></div>}
+    {h.hero_card_image_url&&<img className="showcase-mobile-floating-card" src={h.hero_card_image_url} alt="Kart görseli"/>}
+   </div>
    <div className="showcase-hero-copy">
     <span className="showcase-kicker">{h.eyebrow}</span>
     <h1>{h.hero_title}</h1>
@@ -367,5 +371,24 @@ function Field({fieldKey,effectiveType,cfg,value,onChange,error,type='text',inpu
  </label>
 }
 function RequestField({cfg,value,onChange,inputMode}){return <label className="field"><span>{cfg.label}{cfg.required?' *':''}</span><input inputMode={inputMode} autoComplete="off" value={value} onChange={e=>onChange(e.target.value)} placeholder={cfg.placeholder}/></label>}
-function Progress({steps,current}){return <div className="progress">{steps.map((s,i)=><div className={`progress-item ${i+1<=current?'active':''}`} key={i}><div>{i+1}</div><span>{s}</span></div>)}</div>}
+function Progress({steps,current}){
+ const icons=[WalletCards,FileText,UserRoundCheck,CheckCircle2];
+ return <div className="progress progress-showcase">
+   {steps.slice(0,4).map((label,i)=>{
+     const Icon=icons[i]||CheckCircle2;
+     const index=i+1;
+     const state=index<current?'done':(index===current?'current':'upcoming');
+     return <div className={`progress-showcase-item ${state}`} key={i}>
+       <div className="progress-showcase-track">
+         <div className="progress-showcase-icon"><Icon/></div>
+         {i<3&&<div className="progress-showcase-line"/>}
+       </div>
+       <div className="progress-showcase-copy">
+         <span className="progress-showcase-number">{index}</span>
+         <strong>{label}</strong>
+       </div>
+     </div>
+   })}
+ </div>
+}
 function CardPreview({cfg,programCfg,name,program}){const bg=programCfg?.card_image_url||cfg.card_image_url;const color=programCfg?.card_text_color||cfg.card_text_color||'#fff';const style=bg?{backgroundImage:`linear-gradient(rgba(8,28,48,.18),rgba(8,28,48,.18)),url(${bg})`,color}:{color};return <div className="support-card" style={style}><div className="support-top"><span>{cfg.card_title}</span></div><div className="support-bottom"><div><small>{cfg.holder_label}</small><b>{(name||'ÖRNEK KULLANICI').toUpperCase()}</b></div><div><small>{cfg.program_label}</small><b>{(program||'Örnek Program').replace(' Destek Kartı','')}</b></div></div></div>}

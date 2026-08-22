@@ -144,3 +144,15 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Mobil ve tablet görünümünde hero ana görseli artık metinlerden önce, hero alanının en üstünde gösterilir.
 - Masaüstü yerleşimi değişmez.
 - Hero kart görseli ana görselle birlikte üst görsel alanında kalır.
+
+
+## V10.11 — Mobil hero kesin üstte
+- Mobil/tablet için ayrı hero görsel bloğu DOM içinde metinden önce yerleştirildi.
+- Eski masaüstü hero görsel bloğu mobilde tamamen gizlenir.
+- Böylece CSS sıra çakışmalarından bağımsız olarak görsel telefonda her zaman hero metinlerinin üstünde görünür.
+
+
+## V10.12 — Sonuç ve adım çubuğu
+- Tamamlandı ekranındaki `Talep Sayfasına Dön` butonu kaldırıldı; yalnızca `Ana Sayfaya Dön` kaldı.
+- Tamamlandı ekranındaki talep numarası satırı kullanıcı görünümünden kaldırıldı; veri kaydı/admin tarafı etkilenmedi.
+- Başvuru / Ön Onay / Talep / Tamamlandı adım göstergesi yeni ana sayfanın kırmızı-beyaz tasarım diline uygun, ikonlu ve responsive hale getirildi.
