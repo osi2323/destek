@@ -163,3 +163,13 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - İç sayfalar artık ana sayfadaki `header_left_logo_url` ve `header_right_logo_url` görsellerini kullanır.
 - Böylece admin panelinden ana sayfa için yüklenen iki logo tüm adımlarda aynı şekilde görünür.
 - Mobilde de aynı çift-logo header responsive olarak korunur.
+
+
+## V10.14 — Canlı ziyaretçi sistemi
+- Eski online sistemi anonim Supabase Auth `uid` değerine bağlıydı. Anonymous Auth kapalı/başarısız olduğunda ziyaretçi hiç görünmüyordu.
+- Yeni sistem `sessionStorage` tabanlı sekme oturumu + SECURITY DEFINER heartbeat RPC kullanır; ziyaretçi için Supabase Auth gerekmez.
+- Heartbeat 12 saniyede bir ve adım değişiminde anında gönderilir.
+- Admin `Şu an aktif` hesabı son 45 saniyede heartbeat atan oturumlardan yapılır.
+- Adım dağılımı artık geçmiş tüm oturumları değil yalnızca gerçekten aktif oturumları sayar.
+- Son 5 dakikada görülen oturum ayrı metrikte gösterilir.
+- `supabase/v10_14-online.sql` dosyasını bir kez çalıştırmak gerekir.

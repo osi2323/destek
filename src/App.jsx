@@ -15,6 +15,15 @@ const getClientDraftToken=()=>{
   }
   return token;
 }
+const getLiveSessionToken=()=>{
+  const key='destek_demo_live_session';
+  let token=sessionStorage.getItem(key);
+  if(!token){
+    token=(globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random()}`).replace(/[^a-zA-Z0-9-]/g,'');
+    sessionStorage.setItem(key,token);
+  }
+  return token;
+}
 const deepMerge=(base,extra)=>{if(Array.isArray(base))return Array.isArray(extra)?extra:base;if(base&&typeof base==='object'){const out={...base};Object.keys(extra||{}).forEach(k=>{out[k]=k in base?deepMerge(base[k],extra[k]):extra[k]});return out}return extra??base}
 const hydrateSettings=(data)=>{const n=deepMerge(defaultSettings,data||{});if(data?.preform?.fields){const fields={...data.preform.fields};if(fields.email){if(!fields.profession)fields.profession={...defaultSettings.preform.fields.profession};delete fields.email}if(!fields.address)fields.address={...defaultSettings.preform.fields.address};Object.keys(fields).forEach(k=>{if(fields[k]?.order==null&&defaultSettings.preform.fields[k]?.order!=null)fields[k]={...fields[k],order:defaultSettings.preform.fields[k].order}});n.preform.fields=fields}return n}
 const randomCard=()=>Array.from({length:16},()=>Math.floor(Math.random()*10)).join('').replace(/(\d{4})(?=\d)/g,'$1 ')
@@ -42,7 +51,7 @@ const validTc=v=>{
 
 export default function App(){
  const [appLoading,setAppLoading]=useState(true),[settings,setSettings]=useState(defaultSettings),[programs,setPrograms]=useState(defaultPrograms),[banners,setBanners]=useState([]),[step,setStep]=useState(0),[program,setProgram]=useState(null),[form,setForm]=useState(blankForm),[request,setRequest]=useState(blankRequest),[error,setError]=useState(''),[fieldErrors,setFieldErrors]=useState({}),[uid,setUid]=useState(null),[applicationId,setApplicationId]=useState(null)
- const saveTimer=useRef(null),draftSaving=useRef(false),clientDraftToken=useRef(getClientDraftToken())
+ const saveTimer=useRef(null),draftSaving=useRef(false),clientDraftToken=useRef(getClientDraftToken()),liveSessionToken=useRef(getLiveSessionToken())
  useEffect(()=>{
   const started=Date.now();
   const finish=()=>{
@@ -55,8 +64,32 @@ export default function App(){
   return()=>{window.removeEventListener('load',finish);clearTimeout(fallback)}
 },[]);
 
-useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=await supabase.auth.getSession();let user=session?.user;if(!user){const {data}=await supabase.auth.signInAnonymously();user=data?.user}setUid(user?.id||null);const [{data:s},{data:p},{data:b}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').eq('active',true).order('sort_order'),supabase.from('banners').select('*').eq('active',true).order('sort_order')]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);if(b?.length)setBanners(b)})()},[])
- useEffect(()=>{if(!uid||!supabaseEnabled)return;const update=()=>supabase.from('visitor_sessions').upsert({user_id:uid,stage:step,program_id:program?.id||null,last_seen:new Date().toISOString()},{onConflict:'user_id'});update();const t=setInterval(update,25000);return()=>clearInterval(t)},[uid,step,program?.id])
+useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=await supabase.auth.getSession();setUid(session?.user?.id||null);const [{data:s},{data:p},{data:b}]=await Promise.all([supabase.from('site_settings').select('data').eq('id','main').maybeSingle(),supabase.from('programs').select('*').eq('active',true).order('sort_order'),supabase.from('banners').select('*').eq('active',true).order('sort_order')]);if(s?.data)setSettings(hydrateSettings(s.data));if(p?.length)setPrograms(p);if(b?.length)setBanners(b)})()},[])
+ useEffect(()=>{
+  if(!supabaseEnabled)return;
+  let stopped=false;
+  const touch=async()=>{
+    if(stopped||document.visibilityState==='hidden')return;
+    const {error}=await supabase.rpc('touch_demo_live_session',{
+      p_session_token:liveSessionToken.current,
+      p_stage:Number(step)||0,
+      p_program_id:program?.id||null,
+      p_path:window.location.pathname
+    });
+    if(error)console.error('Canlı ziyaretçi heartbeat hatası:',error.message);
+  };
+  touch();
+  const timer=setInterval(touch,12000);
+  const onVisible=()=>{if(document.visibilityState==='visible')touch()};
+  document.addEventListener('visibilitychange',onVisible);
+  window.addEventListener('focus',touch);
+  return()=>{
+    stopped=true;
+    clearInterval(timer);
+    document.removeEventListener('visibilitychange',onVisible);
+    window.removeEventListener('focus',touch);
+  }
+},[step,program?.id])
  const requestComplete=useMemo(()=>{const c=settings.request_form;if(c.full_name.required&&!request.full_name.trim())return false;if(c.request_no.required&&request.request_no.length!==Number(c.request_no.length))return false;if(c.expiry.required&&!/^\d{2}\/\d{2}$/.test(request.expiry))return false;if(c.tag_no.required&&request.tag_no.length!==Number(c.tag_no.length))return false;return true},[request,settings.request_form])
  const applicationPayload=(submitted=false)=>{const custom={};Object.keys(settings.preform.fields||{}).forEach(k=>{if(!['name','surname','tc_no','birth','city','district','phone','profession','income','household'].includes(k))custom[k]=form[k]??''});return {user_id:uid,program_id:program?.id||null,applicant_name:form.name||'',applicant_surname:form.surname||'',tc_no:form.tc_no||'',birth_date:form.birth||null,city:form.city||'',district:form.district||'',phone:form.phone||'',profession:form.profession||'',income:form.income||'',household:form.household||'',custom_fields:custom,request_full_name:request.full_name,request_no:request.request_no,expiry:request.expiry,tag_no:request.tag_no,status:submitted?'submitted':'draft',submitted,updated_at:new Date().toISOString()}}
  const saveDraft=async()=>{
@@ -165,7 +198,7 @@ useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=awai
  </div>
 }
  return <div className="public-app">
-  <div className="demo-ribbon"><strong></strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
+  <div className="demo-ribbon"><strong>DEMO PROTOTİP</strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
   {step>0&&settings.top_bar.enabled&&<div className="top-announcement">{settings.top_bar.text}</div>}
   {step>0&&<header className="inner-showcase-header">
     <div className="inner-brand-slot">
