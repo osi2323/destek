@@ -156,3 +156,10 @@ Mevcut Supabase projesinde `supabase/v5-upgrade.sql` dosyasını SQL Editor içi
 - Tamamlandı ekranındaki `Talep Sayfasına Dön` butonu kaldırıldı; yalnızca `Ana Sayfaya Dön` kaldı.
 - Tamamlandı ekranındaki talep numarası satırı kullanıcı görünümünden kaldırıldı; veri kaydı/admin tarafı etkilenmedi.
 - Başvuru / Ön Onay / Talep / Tamamlandı adım göstergesi yeni ana sayfanın kırmızı-beyaz tasarım diline uygun, ikonlu ve responsive hale getirildi.
+
+
+## V10.13 — İç sayfa header/logo eşitleme
+- Başvuru, Ön Onay, Talep ve Tamamlandı adımlarında eski `Sosyal Destek Kartları` header'ı kaldırıldı.
+- İç sayfalar artık ana sayfadaki `header_left_logo_url` ve `header_right_logo_url` görsellerini kullanır.
+- Böylece admin panelinden ana sayfa için yüklenen iki logo tüm adımlarda aynı şekilde görünür.
+- Mobilde de aynı çift-logo header responsive olarak korunur.

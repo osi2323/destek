@@ -165,9 +165,18 @@ useEffect(()=>{(async()=>{if(!supabaseEnabled)return;const {data:{session}}=awai
  </div>
 }
  return <div className="public-app">
-  <div className="demo-ribbon"><strong></strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
+  <div className="demo-ribbon"><strong>DEMO PROTOTİP</strong><span> — {settings.demo_ribbon?.text||'RESMÎ KAMU HİZMETİ DEĞİLDİR — GERÇEK KİŞİSEL VERİ GİRMEYİN'}</span></div>
   {step>0&&settings.top_bar.enabled&&<div className="top-announcement">{settings.top_bar.text}</div>}
-  {step>0&&<header className="site-header"><div className="brand">{settings.header.logo_url?<img className="header-logo" src={settings.header.logo_url}/>:<div className="brand-mark"><ShieldCheck size={28}/></div>}<div><b>{settings.site_title}</b><small>{settings.site_subtitle}</small></div></div><div className="safe"><BadgeCheck size={18}/>{settings.header.safe_text}</div></header>}
+  {step>0&&<header className="inner-showcase-header">
+    <div className="inner-brand-slot">
+      {settings.home?.header_left_logo_url?<img src={settings.home.header_left_logo_url} alt="Sol logo"/>:<div className="inner-logo-placeholder"><ShieldCheck/><span>LOGO</span></div>}
+    </div>
+    <div className="inner-brand-divider"/>
+    <div className="inner-brand-slot inner-brand-right">
+      {settings.home?.header_right_logo_url?<img src={settings.home.header_right_logo_url} alt="Sağ logo"/>:<div className="inner-logo-placeholder"><BadgeCheck/><span>LOGO</span></div>}
+    </div>
+    <button className="inner-menu-btn" type="button" aria-label="Menü"><Menu/></button>
+  </header>}
   <main className={step===0?'showcase-shell':'shell'}>
    {step===0&&<ShowcaseHome settings={settings} programs={programs} onProgram={p=>{setProgram(p);setStep(1);scrollTo(0,0)}} onStart={()=>{document.getElementById('home-programs')?.scrollIntoView({behavior:'smooth'})}}/>}
    {step>0&&<Progress steps={settings.steps} current={step}/>} 
